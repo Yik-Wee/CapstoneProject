@@ -13,14 +13,6 @@ class Entity:
     def __init__(self, **kwargs):
         for field in self.fields:
             value = kwargs[field.name]
-            # support for python 3.6 version (or other versions) where
-            # unpacking an `ImmutableMultiDict` (e.g. `**request.form`) gives
-            # key: value pairs where the value is a `list`
-            # e.g. 'name': ['some name']
-            # In this case, take the first element
-            if isinstance(value, list):
-                value = value[0]
-
             if field.validate(value):
                 setattr(self, field.name, value)
             else:

@@ -87,7 +87,7 @@ def add_entity(page_name: str):
 
     if 'confirm' in request.args:
         try:
-            entity = _Entity.from_dict(request.form)
+            entity = _Entity.from_dict(request.form.to_dict())
         except data.ValidationFailedError as err:
             return render_template(
                 'dashboard/add/failure.html',
@@ -108,7 +108,7 @@ def add_entity(page_name: str):
         'dashboard/add/add_entity.html',
         entity=_Entity.entity,
         form=form.html(),
-        table=table.html() if table else None,
+        table=table.html() if table else '',
         confirm=confirm,
     )
 
@@ -119,7 +119,7 @@ def add_entity_result(page_name: str):
     _Entity = entities_add[page_name]
 
     try:
-        entity = _Entity.from_dict(request.form)
+        entity = _Entity.from_dict(request.form.to_dict())
     except data.ValidationFailedError as err:
         return render_template(
             'dashboard/add/failure.html',
