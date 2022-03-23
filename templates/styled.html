@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    {% block css %}
+    {{ css }}
+    {% endblock %}
+    <title>
+        {% block title %}
+        {{ title }}
+        {% endblock %}
+    </title>
+</head>
+<body>
+    {% block body %}
+    {{ body }}
+    {% endblock %}
+
+    <hr>
+    <a href="/">🏠Home</a>
+    <a href="javascript:history.back()">&larr; Back</a>
+</body>
+</html>

@@ -1,0 +1,15 @@
+@font-face {
+    font-family: dankmono;
+    src: url("../fonts/dankmono_normal.otf");
+    font-style: normal;
+}
+
+@font-face {
+    font-family: dankmono;
+    src: url("../fonts/dankmono_italic.otf");
+    font-style: italic;
+}
+
+:root {
+    font-family: dankmono;
+}

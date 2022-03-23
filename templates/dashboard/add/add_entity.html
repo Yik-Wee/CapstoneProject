@@ -1,0 +1,14 @@
+{% extends "styled.html" %}
+
+{% block title %}
+Add {{ entity }}
+{% endblock %}
+
+{% block body %}
+<h1>Add {{ entity }}</h1>
+{% if confirm %}
+    <h3>Are you sure this is correct?</h3>
+{% endif %}
+{{ table|safe }}
+{{ form|safe }}
+{% endblock %}
