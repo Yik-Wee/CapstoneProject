@@ -6,17 +6,17 @@ from flask import Flask, redirect, render_template, request
 import convert
 import data
 import myhtml as html
-from model import Activity, Class, Club, Student
+from model import Activity, Class, Club, Entity, Student
 from storage import Activities, Classes, Clubs, Collection, Students
 
 app = Flask(__name__)
 
 
 coll: Dict[str, Collection] = {
-    'students': Students(key='student_id'),
-    'clubs': Clubs(key='club_id'),
-    'classes': Classes(key='class_id'),
-    'activities': Activities(key='activity_id'),
+    'student': Students(key='student_id'),
+    'club': Clubs(key='club_id'),
+    'class': Classes(key='class_id'),
+    'activity': Activities(key='activity_id'),
 }
 
 
@@ -27,8 +27,8 @@ coll: Dict[str, Collection] = {
 DASHBOARD_ACTIONS = ('add', 'view', 'edit')
 
 DEFAULT_404_ERR_MSG = (
-    "404 Not Found: The requested URL was not found on the server. "
-    "If you entered the URL manually please check your spelling and try again."
+    '404 Not Found: The requested URL was not found on the server. '
+    'If you entered the URL manually please check your spelling and try again.'
 )
 
 
@@ -72,7 +72,7 @@ def dashboard_action(action: str):
 # ------------------------------
 # Add new Club/Activity
 # ------------------------------
-entities_add = {
+entities_add: Dict[str, Entity] = {
     'club': Club,
     'activity': Activity,
 }
@@ -139,7 +139,7 @@ def add_entity_result(page_name: str):
 # ------------------------------
 # view existing Student/Class/Club/Activity
 # ------------------------------
-entities_view = {
+entities_view: Dict[str, Entity] = {
     'student': Student,
     'class': Class,
     'club': Club,
@@ -150,12 +150,25 @@ entities_view = {
 @app.route('/dashboard/view/<page_name>', methods=['GET'])
 @for_existing_pages(entities_view)
 def view_entity(page_name: str):
-    _Entity = entities_view[page_name]
-    # ...
-    # view entity based on `request.args`
+    entity = entities_view[page_name]
+    db = coll[page_name]
+
+    filter = request.args.to_dict()
+    records = db.find(filter)
+    table = '🦧can\'t find anything'
+
+    form = html.RecordForm(f'/dashboard/view/{page_name}')
+    form = convert.filter_to_form(filter, entity, form)
+
+    if records:
+        table = convert.records_to_table(records)
+        table = table.html()
+
     return render_template(
         'dashboard/view/view_entity.html',
-        entity=_Entity.entity,
+        entity=entity.entity,
+        form=form.html(),
+        table=table,
     )
 
 

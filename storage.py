@@ -5,13 +5,13 @@ class Collection:
     def insert(self, record):
         pass
 
-    def find(self, key):
+    def find(self, filter):
         pass
 
-    def update(self, key, new_record):
+    def update(self, filter, new_record):
         pass
 
-    def delete(self, key):
+    def delete(self, filter):
         pass
 
 

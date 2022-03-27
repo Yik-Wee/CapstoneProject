@@ -10,13 +10,15 @@ class Entity:
     """
     entity = NotImplemented
     fields = NotImplemented
+
     def __init__(self, **kwargs):
         for field in self.fields:
             value = kwargs[field.name]
             if field.validate(value):
                 setattr(self, field.name, value)
             else:
-                raise ValidationFailedError(f'Invalid field, `{field.name}`: `{value}`')
+                raise ValidationFailedError(
+                    f'Invalid field, `{field.name}`: `{value}`')
 
     def __repr__(self):
         return f'{self.__class__.__name__}("{self.name}")'
@@ -28,7 +30,7 @@ class Entity:
         for field in cls.fields:
             blank_rec[field.name] = None
         return cls(**blank_rec)
-        
+
     @classmethod
     def from_dict(cls, dict_):
         """Instantiates Entity from a dict"""
@@ -73,7 +75,6 @@ class Club(Entity):
     """
     entity = 'Club'
     fields = [
-        # ...
         String('name', 'Name of club'),
     ]
 
@@ -81,5 +82,7 @@ class Club(Entity):
 class Activity(Entity):
     entity = 'Activity'
     fields = [
-        # ...
+        Date('start_date', 'Start Date'),
+        Date('end_date', 'End Date'),  # optional
+        String('description', 'Description'),
     ]
