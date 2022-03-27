@@ -127,7 +127,7 @@ def add_entity_result(page_name: str):
             error=err,
         ), 400
     else:
-        coll['students'].insert(entity.as_dict())
+        coll[page_name].insert(entity.as_dict())
         table = convert.entity_to_table(entity)
         return render_template(
             'dashboard/add/success.html',
@@ -209,7 +209,7 @@ def admin():
 
 if __name__ == '__main__':
     # for production server:
-    app.run('0.0.0.0')
+    # app.run('0.0.0.0')
 
     # for dev server:
-    # app.run('localhost', port=3000, debug=True)
+    app.run('localhost', port=3000, debug=True)
