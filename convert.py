@@ -5,6 +5,23 @@ import model
 import myhtml as html
 
 
+def __add_input_by_field(
+    form: html.RecordForm,
+    field: data.Field,
+    value: str = ''
+) -> None:
+    if isinstance(field, data.Date):
+        form.date_input(field.label, field.name, value=value)
+    elif isinstance(field, data.Email):
+        form.email_input(field.label, field.name, value=value)
+    elif isinstance(field, data.String):
+        form.text_input(field.label, field.name, value=value)
+    elif isinstance(field, data.Number):
+        form.number_input(field.label, field.name, value=value)
+    else:  # fallback input type
+        form.text_input(field.label, field.name, value=value)
+
+
 def entity_to_new_form(
     entity: model.Entity,
     form: html.RecordForm,
@@ -18,16 +35,7 @@ def entity_to_new_form(
     - form
     """
     for field in entity.fields:
-        if isinstance(field, data.Date):
-            form.date_input(field.label, field.name)
-        elif isinstance(field, data.Email):
-            form.email_input(field.label, field.name)
-        elif isinstance(field, data.String):
-            form.text_input(field.label, field.name)
-        elif isinstance(field, data.Number):
-            form.number_input(field.label, field.name)
-        else:  # fallback input type
-            form.text_input(field.label, field.name)
+        __add_input_by_field(form, field)
     form.submit_input()
     return form
 
@@ -82,17 +90,7 @@ def filter_to_form(filter: dict, entity: model.Entity, form: html.RecordForm) ->
     # a bit scuffed 🗿
     for field in entity.fields:
         value = filter.get(field.name)
-        if isinstance(field, data.Date):
-            form.date_input(field.label, field.name, value=value)
-        elif isinstance(field, data.Email):
-            form.email_input(field.label, field.name, value=value)
-        elif isinstance(field, data.String):
-            form.text_input(field.label, field.name, value=value)
-        elif isinstance(field, data.Number):
-            form.number_input(field.label, field.name, value=value)
-        else:  # fallback input type
-            form.text_input(field.label, field.name, value=value)
+        __add_input_by_field(form, field, value=value)
 
     form.submit_input()
     return form
-
