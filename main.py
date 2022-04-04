@@ -12,7 +12,7 @@ from storage import Activities, Classes, Clubs, Collection, Students
 app = Flask(__name__)
 
 
-coll: Dict[str, Collection] = {
+colls: Dict[str, Collection] = {
     'student': Students(key='student_id'),
     'club': Clubs(key='club_id'),
     'class': Classes(key='class_id'),
@@ -34,7 +34,7 @@ DEFAULT_404_ERR_MSG = (
 
 @app.errorhandler(404)
 def not_found(e=DEFAULT_404_ERR_MSG):
-    return render_template('not_found.html', error=e), 404
+    return render_template('errors.html', title='Page Not Found', error=e), 404
 
 
 def for_existing_pages(pages: Iterable):
@@ -127,7 +127,7 @@ def add_entity_result(page_name: str):
             error=err,
         ), 400
     else:
-        coll[page_name].insert(entity.as_dict())
+        colls[page_name].insert(entity.as_dict())
         table = convert.entity_to_table(entity)
         return render_template(
             'dashboard/add/success.html',
@@ -151,10 +151,10 @@ entities_view: Dict[str, Entity] = {
 @for_existing_pages(entities_view)
 def view_entity(page_name: str):
     entity = entities_view[page_name]
-    db = coll[page_name]
+    coll = colls[page_name]
 
     filter = request.args.to_dict()
-    records = db.find(filter)
+    records = coll.find(filter)
     table = '🦧can\'t find anything'
 
     form = html.RecordForm(f'/dashboard/view/{page_name}')

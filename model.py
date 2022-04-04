@@ -1,4 +1,4 @@
-from data import ValidationFailedError, String, Date
+from data import Number, ValidationFailedError, String, Date, Year
 
 
 class Entity:
@@ -52,20 +52,29 @@ class Student(Entity):
     Fields:
     - Name: str
     - Age: int
-    - YearEnrolled: int
-    - GraduatingYear: int
+    - Year Enrolled: int
+    - Graduating Year: int
     """
     entity = 'Student'
     fields = [
         String('name', 'Name (as in NRIC)'),
-        String('class', 'Class'),
-        Date('dob', 'Date of birth'),
+        Number('age', 'Age'),
+        Year('year_enrolled', 'Year Enrolled'),
+        Year('graduating_year', 'Graduating Year'),
     ]
 
 
 class Class(Entity):
+    """
+    Fields:
+    - Name: str
+    - Level: str {JC1, JC2}
+    """
     entity = 'Class'
-    field = []  # ...
+    field = [
+        String('name', 'Name'),
+        String('level', 'Level'),  # {JC1, JC2}
+    ]
 
 
 class Club(Entity):
