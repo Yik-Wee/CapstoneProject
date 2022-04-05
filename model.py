@@ -71,7 +71,7 @@ class Class(Entity):
     - Level: str {JC1, JC2}
     """
     entity = 'Class'
-    field = [
+    fields = [
         String('name', 'Name'),
         String('level', 'Level'),  # {JC1, JC2}
     ]
