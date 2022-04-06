@@ -9,6 +9,7 @@ class RecordForm:
     Available formats:
     - HTML
     """
+
     def __init__(self, action, method='get'):
         self.__action = action
         self.__method = method
@@ -42,7 +43,7 @@ class RecordForm:
         self.__inputs.append(
             f'<label for="{kwargs.get("for_")}">{label}</label>'
         )
-        
+
     def __add_input(self, type: str, name: str, value: str):
         """
         Add a generic input element to the form.
@@ -68,7 +69,7 @@ class RecordForm:
                 '/><br />'
             )
         )
-    
+
     def dropdown_input(self, label: str, name: str, options: dict):
         """Add a labelled select element to the form. Works as a dropdown menu."""
         self.__add_label(label, for_='name')
@@ -78,48 +79,48 @@ class RecordForm:
         html += '</select><br>'
         self.__inputs.append(html)
 
-    def text_input(self, label: str, name: str, value: str=''):
+    def text_input(self, label: str, name: str, value: str = ''):
         """
         Add a labelled text input element to the form.
         """
         self.__add_label(label, for_=name)
         self.__add_input('text', name, value)
 
-    def number_input(self, label: str, name: str, value: str=''):
+    def number_input(self, label: str, name: str, value: str = ''):
         """
         Add a labelled number input element to the form.
         """
         self.__add_label(label, for_=name)
         self.__add_input('number', name, value)
 
-    def date_input(self, label: str, name: str, value: str=''):
+    def date_input(self, label: str, name: str, value: str = ''):
         """
         Add a labelled date input element to the form.
         """
         self.__add_label(label, for_=name)
         self.__add_input('date', name, value)
 
-    def email_input(self, label: str, name: str, value: str=''):
+    def email_input(self, label: str, name: str, value: str = ''):
         """
         Add a labelled email input element to the form.
         """
         self.__add_label(label, for_=name)
         self.__add_input('email', name, value)
 
-    def password_input(self, label: str, name: str, value: str=''):
+    def password_input(self, label: str, name: str, value: str = ''):
         """
         Add a labelled password input element to the form.
         """
         self.__add_label(label, for_=name)
         self.__add_input('password', name, value)
 
-    def hidden_input(self, name: str, value: str=''):
+    def hidden_input(self, name: str, value: str = ''):
         """
         Add a hidden input element to the form.
         """
         self.__add_input('hidden', name, value)
 
-    def submit_input(self, value: str='Submit'):
+    def submit_input(self, value: str = 'Submit'):
         """
         Add a submit input element to the form.
         Input elements are displayed in the order they are added.
@@ -153,7 +154,6 @@ class RecordForm:
         return html
 
 
-
 class RecordTable:
     """
     Encapsulates data for a table, and contains methods for
@@ -165,6 +165,7 @@ class RecordTable:
     Available formats:
     - HTML
     """
+
     def __init__(self, **kwargs):
         self.__rows = []
         self.headers = kwargs['headers']
@@ -174,6 +175,9 @@ class RecordTable:
             f'{self.__class__.__name__}'
             f'(headers="{self.headers}")'
         )
+
+    def rows(self):
+        return self.__rows
 
     def add_row(self, data: dict):
         """
@@ -214,5 +218,54 @@ class RecordTable:
                 html += f'<td>{item}</td>'
             html += '</tr>'
         html += '</table>'
-        
+
+        return html
+
+
+class SelectableRecordTable(RecordTable):
+    """
+    Display an html RecordTable that allows the user to click & choose a row/record
+    which redirects them to `self.action()` with the method `self.method()`, with the
+    record as the request parameters.
+    """
+    def __init__(self, **kwargs):
+        """
+        Arguments:
+        - action: str
+          The action for each row's form element. Default ''
+        - method: str
+          The method for each row's form element ('get' | 'post'). Default 'get'
+        - headers: list
+          The headers/columns of the table
+        """
+        self.__action = kwargs.get('action', '')
+        self.__method = kwargs.get('method', 'get')
+        super().__init__(**kwargs)
+
+    def action(self):
+        return self.__action
+
+    def method(self):
+        return self.__method
+
+    def html(self) -> str:
+        html = '<table style="border: 1px solid black;">'
+        html += '<tr>'
+        for header in self.headers:
+            html += f'<th>{header}</th>'
+        html += '</tr>'
+        for row in self.rows():
+            html += '<tr>'
+            html += f'<form action="{self.action()}" method="{self.method()}">'
+            for idx, item in enumerate(row):
+                header = self.headers[idx]
+                html += f'''<td>
+                    <input type="hidden" name="{header}" value="{item}">
+                    {item}
+                    </td>'''
+            html += '<td><input type="submit" value="🤏 Choose Record"></td>'
+            html += '</form>'
+            html += '</tr>'
+        html += '</table>'
+
         return html
