@@ -33,6 +33,8 @@ class RecordForm:
         Arguments
         - label: str
           The label displayed on the form
+        - for_: str
+          The input tag to label
 
         Return
         - None
@@ -67,6 +69,15 @@ class RecordForm:
             )
         )
     
+    def dropdown_input(self, label: str, name: str, options: dict):
+        """Add a labelled select element to the form. Works as a dropdown menu."""
+        self.__add_label(label, for_='name')
+        html = f'<select name="{name}" id="name">'
+        for key, value in options.items():
+            html += f'<option value="{key}">{value}</option>'
+        html += '</select><br>'
+        self.__inputs.append(html)
+
     def text_input(self, label: str, name: str, value: str=''):
         """
         Add a labelled text input element to the form.
