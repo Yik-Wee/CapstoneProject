@@ -78,8 +78,24 @@ def records_to_table(records: List[dict]) -> html.RecordTable:
     not empty.
     Uses keys from `records[0]` as headers for the `RecordTable`.
     """
-    headers = records[0].keys()
+    headers = list(records[0].keys())
     table = html.RecordTable(headers=headers)
+    for record in records:
+        table.add_row(record)
+    return table
+
+
+def records_to_selectable_table(records: List[dict], action: str = '', method: str = 'get', search_by: str = 'student') -> html.SelectableRecordTable:
+    headers = list(records[0].keys())
+    table = html.SelectableRecordTable(headers=headers, action=action, method=method, search_by = search_by)
+    for record in records:
+        table.add_row(record)
+    return table
+
+
+def records_to_editable_table(records: List[dict]) -> html.EditableRecordTable:
+    headers = list(records[0].keys())
+    table = html.EditableRecordTable(headers=headers, method='post')
     for record in records:
         table.add_row(record)
     return table

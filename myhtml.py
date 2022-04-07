@@ -71,12 +71,14 @@ class RecordForm:
         )
 
     def dropdown_input(self, label: str, name: str, options: dict):
-        """Add a labelled select element to the form. Works as a dropdown menu."""
+        """
+        Add a labelled select element to the form. Works as a dropdown menu.
+        """
         self.__add_label(label, for_=name)
         html = f'<select name="{name}" id="{name}">'
         for key, value in options.items():
             html += f'<option value="{key}">{value}</option>'
-        html += '</select><br>'
+        html += '</select>'
         self.__inputs.append(html)
 
     def text_input(self, label: str, name: str, value: str = ''):
@@ -237,9 +239,12 @@ class SelectableRecordTable(RecordTable):
           The method for each row's form element ('get' | 'post'). Default 'get'
         - headers: list
           The headers/columns of the table
+        - search_by: str
+          The records to filter/search by, specified in the request parameters. Default 'student'
         """
         self.__action = kwargs.get('action', '')
         self.__method = kwargs.get('method', 'get')
+        self.__search_by = kwargs.get('search_by', 'student')
         super().__init__(**kwargs)
 
     def action(self):
@@ -263,7 +268,10 @@ class SelectableRecordTable(RecordTable):
                     <input type="hidden" name="{header}" value="{item}">
                     {item}
                     </td>'''
-            html += '<td><input type="submit" value="🤏 Choose Record"></td>'
+            html += f'''<td>
+                <input type="submit" value="🤏 Choose Record">
+                <input type="hidden" name="search_by" value="{self.__search_by}">
+                </td>'''
             html += '</form>'
             html += '</tr>'
         html += '</table>'
@@ -276,6 +284,18 @@ class EditableRecordTable(RecordTable):
     Display an html RecordTable with the ability to edit each rows/record's fields.
     """
     def __init__(self, **kwargs):
+        """
+        Arguments:
+        - action: str
+          The action for each row's form element. Default ''
+        - method: str
+          The method for each row's form element ('get' | 'post'). Default 'get'
+        - headers: list
+          The headers/columns of the table
+        - header_types: dict
+          the input types for the table's headers
+          (see `set_header_types()`)
+        """
         self.__action = kwargs.get('action', '')
         self.__method = kwargs.get('method', 'post')
 
