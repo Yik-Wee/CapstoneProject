@@ -1,7 +1,15 @@
-from typing import Dict, List
+from typing import Any, Callable, Dict, Iterable, List
 import data
 import model
 import myhtml as html
+from werkzeug.datastructures import ImmutableMultiDict as __ImmutableMultiDict
+
+from validate import number
+
+
+# ------------------------------
+# Functions to convert data to html
+# ------------------------------
 
 
 def __add_input_by_field(
@@ -85,17 +93,29 @@ def records_to_table(records: List[dict]) -> html.RecordTable:
     return table
 
 
-def records_to_selectable_table(records: List[dict], action: str = '', method: str = 'get', search_by: str = 'student') -> html.SelectableRecordTable:
+def records_to_selectable_table(
+    records: List[dict],
+    action: str = '',
+    method: str = 'get',
+    search_by: str = 'student'
+) -> html.SelectableRecordTable:
     headers = list(records[0].keys())
-    table = html.SelectableRecordTable(headers=headers, action=action, method=method, search_by = search_by)
+    table = html.SelectableRecordTable(
+        headers=headers, action=action, method=method, search_by=search_by)
     for record in records:
         table.add_row(record)
     return table
 
 
-def records_to_editable_table(records: List[dict]) -> html.EditableRecordTable:
+def records_to_editable_table(
+    records: List[dict],
+    action: str = '',
+    method: str = 'post',
+    search_by: str = 'student'
+) -> html.EditableRecordTable:
     headers = list(records[0].keys())
-    table = html.EditableRecordTable(headers=headers, method='post')
+    table = html.EditableRecordTable(
+        headers=headers, action=action, method=method, search_by=search_by)
     for record in records:
         table.add_row(record)
     return table
@@ -108,6 +128,11 @@ def filter_to_form(filter: dict, entity: model.Entity, form: html.RecordForm) ->
         __add_input_by_field(form, field, value=value or '')
     form.submit_input()
     return form
+
+
+# ------------------------------
+# Functions/Utils to convert data to non-html
+# ------------------------------
 
 
 def __field_to_input_type(field: data.Field) -> str:
@@ -143,3 +168,94 @@ def entity_to_header_types(entity: model.Entity) -> Dict[str, str]:
         input_type = __field_to_input_type(field)
         header_types[field.name] = input_type
     return header_types
+
+
+class InvalidPostDataError(Exception):
+    pass
+
+
+def req_form_to_records(
+    req_form: __ImmutableMultiDict,
+    accepted_methods: Iterable[str],
+    entity: model.Entity,
+) -> List[Dict[str, Any]]:
+    """
+    Convert the post data `req_form` to records in the format:
+    ```json
+    [
+        {
+            "old": {
+                "name": ...,
+                "...": ...,
+            },
+            "new": {
+                "name": ...,
+                "...": ...,
+            },
+            "method": "UPDATE" | "DELETE"
+        },
+        {
+            "old": {...},
+            "new": {...},
+            "method": "UPDATE" | "DELETE"
+        },
+        ...
+    ]
+    ```
+
+    `entity`: `Entity`
+    - Used to cast fields into the appropriate types (e.g. "year" field: str -> int)
+
+    Raises
+    ------
+    `InvalidPostDataError`
+    - if any "method" field in `req_form` is not in `accepted_methods`
+    - if there is an inconsistent number of records in the post data
+      e.g. each key's list of values has a different length in `req_form`
+
+    Return
+    ------
+    """
+
+    methods = req_form.getlist("method")
+    records = []
+
+    for method in methods:
+        if method not in accepted_methods:
+            raise InvalidPostDataError(
+                'field `method` must be string literal "UPDATE" or "DELETE" 🤡')
+
+        records.append({
+            "old": {},
+            "new": {},
+            "method": method,
+        })
+
+    for key in req_form:
+        values = req_form.getlist(key)
+        if len(values) != len(records):
+            raise InvalidPostDataError('Inconsistent number of records 🤡')
+
+        _key = key[4:]
+        for idx, value in enumerate(values):
+            if key.startswith('old:'):
+                records[idx]['old'][_key] = value
+            elif key.startswith('new:'):
+                records[idx]['new'][_key] = value
+
+    # 💀 its 10:07 PM and im tired pls help :(
+    for field in entity.fields:
+        print(field)
+        for rec_data in records:
+            value_old = rec_data['old'].get(field.name)
+            value_new = rec_data['new'].get(field.name)
+
+            if isinstance(field, data.Number):
+                print(f'\t{value_old}, {value_new}, {field.name}')
+                print(f'\t{rec_data}')
+                if value_old is not None:
+                    rec_data['old'][field.name] = int(value_old)
+                if value_new is not None:
+                    rec_data['new'][field.name] = int(value_new)
+
+    return records

@@ -6,8 +6,16 @@ Edit {{ entity }}
 
 {% block body %}
 <h1>Edit {{ entity }}</h1>
-<h2>Search By:</h2>
-{{ form|safe }}
-<h2>Results:</h2>
-{{ table|safe }}
+{% if confirm %}
+    <h2>Are you sure this is correct?</h2>
+    <h3>Old {{ entity }}(s)</h3>
+    {{ table_old|safe }}
+    <h3>New {{ entity }}(s)</h3>
+    {{ table_new|safe }}
+{% else %}
+    <h2>Search By:</h2>
+    {{ form|safe }}
+    <h2>Results:</h2>
+    {{ table|safe }}
+{% endif %}
 {% endblock %}

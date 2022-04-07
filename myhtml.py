@@ -240,11 +240,11 @@ class SelectableRecordTable(RecordTable):
         - headers: list
           The headers/columns of the table
         - search_by: str
-          The records to filter/search by, specified in the request parameters. Default 'student'
+          The records to filter/search by, specified in the request parameters. Default None
         """
         self.__action = kwargs.get('action', '')
         self.__method = kwargs.get('method', 'get')
-        self.__search_by = kwargs.get('search_by', 'student')
+        self.__search_by = kwargs.get('search_by')
         super().__init__(**kwargs)
 
     def action(self):
@@ -268,10 +268,11 @@ class SelectableRecordTable(RecordTable):
                     <input type="hidden" name="{header}" value="{item}">
                     {item}
                     </td>'''
-            html += f'''<td>
-                <input type="submit" value="🤏 Choose Record">
-                <input type="hidden" name="search_by" value="{self.__search_by}">
-                </td>'''
+            html += '<td>'
+            html += '<input type="submit" value="🤏 Choose Record">'
+            if self.__search_by is not None:
+                html += f'<input type="hidden" name="search_by" value="{self.__search_by}">'
+            html += '</td>'
             html += '</form>'
             html += '</tr>'
         html += '</table>'
@@ -287,7 +288,7 @@ class EditableRecordTable(RecordTable):
         """
         Arguments:
         - action: str
-          The action for each row's form element. Default ''
+          The action for each row's form element. Default '' (empty str)
         - method: str
           The method for each row's form element ('get' | 'post'). Default 'get'
         - headers: list
@@ -295,9 +296,12 @@ class EditableRecordTable(RecordTable):
         - header_types: dict
           the input types for the table's headers
           (see `set_header_types()`)
+        - search_by: str
+          The records to filter/search by, specified in the request parameters. Default None
         """
         self.__action = kwargs.get('action', '')
         self.__method = kwargs.get('method', 'post')
+        self.__search_by = kwargs.get('search_by')
 
         header_types = kwargs.get('header_types', {})
         self.set_header_types(header_types)
@@ -347,6 +351,8 @@ class EditableRecordTable(RecordTable):
                 </td>'''
             html += '</tr>'
         html += '</table>'
+        if self.__search_by is not None:
+            html += f'<input type="hidden" name="search_by" value="{self.__search_by}">'
         html += f'<input type="submit" value="Save Changes" form="{form_id}">'
 
         return html

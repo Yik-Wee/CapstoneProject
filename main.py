@@ -94,7 +94,7 @@ def add_entity(page_name: str):
             return render_template(
                 'dashboard/add/failure.html',
                 entity=_Entity.entity,
-                error=err,
+                error=str(err),
             ), 400
         else:
             form = html.RecordForm(
@@ -126,7 +126,7 @@ def add_entity_result(page_name: str):
         return render_template(
             'dashboard/add/failure.html',
             entity=_Entity.entity,
-            error=err,
+            error=str(err),
         ), 400
     else:
         colls[page_name].insert(entity.as_dict())
@@ -179,7 +179,7 @@ def view_entity(page_name: str):
 # ------------------------------
 pages_edit_er_models: Dict[str, Dict[str, Entity]] = {
     'membership': {
-        'student': Student,
+        'student': Student,  # TODO change 'student' to 'member'; Student to Member
         'club': Club,
     },
     'participation': {
@@ -191,11 +191,8 @@ pages_edit_er_models: Dict[str, Dict[str, Entity]] = {
 
 @app.route('/dashboard/edit/<page_name>', methods=['GET', 'POST'])
 @for_existing_pages(pages_edit_er_models)
-def edit_entity(page_name: str):
+def edit_relationship(page_name: str):
     # stuff to edit the Club Membership / Activity Participation
-    for key in request.form:
-        values = request.form.getlist(key)
-        print(f'{key}: {values}')
     coll = colls[page_name]
     table = None
     form = None
@@ -210,17 +207,17 @@ def edit_entity(page_name: str):
     search_by_coll = colls[search_by]
 
     if 'confirm' in request.args:
-        ...  # handle confirm
-        return ...
+        return edit_relationship_confirm(page_name, search_by)  # handle confirm
 
 
     # get record filter from request params
     filter = request.args.to_dict()
 
     # construct form to search for records to edit which puts filter in get request params (request.args)
+    _Entity = relationship[search_by]
     form = html.RecordForm(action='', method='get')
     options = {name: entity.entity for name, entity in relationship.items()}
-    options = {search_by: relationship[search_by], **options}
+    options = {search_by: _Entity.entity, **options}
     form.dropdown_input('Search By', 'search_by', options)
     form.submit_input('👈 Choose')
     form = convert.filter_to_form(filter, relationship[search_by], form)
@@ -237,7 +234,7 @@ def edit_entity(page_name: str):
     elif len(records) == 1:
         # exactly 1 (e.g. entity == 'student') record found -> return all clubs the student is in
         records = coll.find(filter)
-        table = convert.records_to_editable_table(records)
+        table = convert.records_to_editable_table(records, action='?confirm', method='post', search_by=search_by)
 
         _entities = list(relationship.keys())
         _idx = _entities.index(search_by)
@@ -256,6 +253,57 @@ def edit_entity(page_name: str):
         entity=page_name,
         form=form,
         table=table,
+    )
+
+
+ACCEPTED_METHODS = ('UPDATE', 'DELETE')
+
+
+def edit_relationship_confirm(page_name: str, search_by: str) -> str:
+    relationship = pages_edit_er_models[page_name]
+    entity = relationship[search_by]
+
+    try:
+        records = convert.req_form_to_records(request.form, ACCEPTED_METHODS, entity)
+        import json
+        print(json.dumps(records, indent=2))
+    except convert.InvalidPostDataError as err:
+        return render_template(
+            'errors.html',
+            title='Invalid Post Data',
+            error=str(err)
+        ), 409
+    
+    headers = list(records[0]['old'].keys())
+    # TODO submittable record table instead of static record table
+    table_old = html.RecordTable(headers=headers)
+    table_new = html.RecordTable(headers=headers)
+
+    for recs in records:  # put info is a bad name but wtv
+        old_record = recs['old']
+        new_record = recs['new']
+        try:  # validate the records
+            entity.from_dict(old_record)
+            entity.from_dict(new_record)
+        except data.ValidationFailedError as err:
+            return render_template(
+                'dashboard/edit/failure.html',
+                error=str(err),
+            ), 400
+        else:
+            table_old.add_row(old_record)
+            table_new.add_row(new_record)
+
+        # if method == 'UPDATE':
+        #     coll.update(old_record, new_record)
+        # elif method == 'DELETE':
+        #     coll.delete(old_record)
+
+    return render_template(
+        'dashboard/edit/edit_entity.html',
+        confirm=True,
+        table_old=table_old.html(),
+        table_new=table_new.html(),
     )
 
 
