@@ -1,4 +1,5 @@
-from data import Number, ValidationFailedError, String, Date, Year
+from typing import List
+from data import Field, Number, ValidationFailedError, String, Date, Year
 
 
 class Entity:
@@ -8,8 +9,8 @@ class Entity:
     Subclasses must have a `fields` attribute consisting of
     a list of fields.
     """
-    entity = NotImplemented
-    fields = NotImplemented
+    entity: str = NotImplemented
+    fields: List[Field] = NotImplemented
 
     def __init__(self, **kwargs):
         for field in self.fields:

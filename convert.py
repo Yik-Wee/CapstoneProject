@@ -1,5 +1,4 @@
-from typing import List
-from wsgiref import headers
+from typing import Dict, List
 import data
 import model
 import myhtml as html
@@ -93,3 +92,38 @@ def filter_to_form(filter: dict, entity: model.Entity, form: html.RecordForm) ->
         __add_input_by_field(form, field, value=value or '')
     form.submit_input()
     return form
+
+
+def __field_to_input_type(field: data.Field) -> str:
+    if isinstance(field, data.Date):
+        return 'date'
+    elif isinstance(field, data.Email):
+        return 'email'
+    elif isinstance(field, data.String):
+        return 'text'
+    elif isinstance(field, data.Number):
+        return 'number'
+    return 'text'  # fallback input type
+
+
+def entity_to_header_types(entity: model.Entity) -> Dict[str, str]:
+    """
+    Get the input types of the fields of the `entity`.
+    e.g. For `entity`: `Student` with fields
+        String('name', 'Name (as in NRIC)'),
+        Number('age', 'Age'),
+        Year('year_enrolled', 'Year Enrolled'),
+        Year('graduating_year', 'Graduating Year'),
+    the input/header types are
+        {
+            'name': 'text',
+            'age': 'number',
+            'year_enrolled': 'year',
+            'graduating_year': 'year',
+        }
+    """
+    header_types = {}
+    for field in entity.fields:
+        input_type = __field_to_input_type(field)
+        header_types[field.name] = input_type
+    return header_types

@@ -72,8 +72,8 @@ class RecordForm:
 
     def dropdown_input(self, label: str, name: str, options: dict):
         """Add a labelled select element to the form. Works as a dropdown menu."""
-        self.__add_label(label, for_='name')
-        html = f'<select name="{name}" id="name">'
+        self.__add_label(label, for_=name)
+        html = f'<select name="{name}" id="{name}">'
         for key, value in options.items():
             html += f'<option value="{key}">{value}</option>'
         html += '</select><br>'
@@ -267,5 +267,66 @@ class SelectableRecordTable(RecordTable):
             html += '</form>'
             html += '</tr>'
         html += '</table>'
+
+        return html
+
+
+class EditableRecordTable(RecordTable):
+    """
+    Display an html RecordTable with the ability to edit each rows/record's fields.
+    """
+    def __init__(self, **kwargs):
+        self.__action = kwargs.get('action', '')
+        self.__method = kwargs.get('method', 'post')
+
+        header_types = kwargs.get('header_types', {})
+        self.set_header_types(header_types)
+
+        super().__init__(**kwargs)
+
+    def set_header_types(self, header_types: dict):
+        """
+        Set the `header_types` for the table headers. e.g.
+        {
+            'name': data.String,
+            'year': data.Year,
+            'date': data.Date,
+            ...
+        }
+        """
+        self.__header_types = header_types
+
+    def action(self):
+        return self.__action
+
+    def method(self):
+        return self.__method
+
+    def html(self) -> str:
+        form_id = '__editable_form'
+        html = f'<form action="{self.action()}" method="{self.method()}" id="{form_id}"></form>'
+        html += '<table style="border: 1px solid black;">'
+        html += '<tr>'
+        for header in self.headers:
+            html += f'<th>{header}</th>'
+        html += '</tr>'
+        for row in self.rows():
+            html += '<tr>'
+            for idx, item in enumerate(row):
+                header = self.headers[idx]
+                header_type = self.__header_types[header]
+                html += f'''<td>
+                    <input type="hidden" name="old:{header}" value="{item}" form="{form_id}">
+                    <input type="{header_type}" name="new:{header}" value="{item}" form="{form_id}">
+                    </td>'''
+            html += f'''<td>
+                <select id="method" name="method" form="{form_id}">
+                    <option value="UPDATE">Update</option>
+                    <option value="DELETE">Delete</option>
+                </select>
+                </td>'''
+            html += '</tr>'
+        html += '</table>'
+        html += f'<input type="submit" value="Save Changes" form="{form_id}">'
 
         return html
