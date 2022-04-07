@@ -96,3 +96,22 @@ class Activity(Entity):
         Date('end_date', 'End Date'),  # optional
         String('description', 'Description'),
     ]
+
+
+class ClubMember(Entity):
+    entity = 'Member'
+    fields = [
+        String('name', 'Name (as in NRIC)'),
+        String('role', 'Role'),  # default 'member'
+    ]
+
+
+class ActivityParticipant(Entity):
+    entity = 'Participant'
+    fields = [
+        String('name', 'Name (as in NRIC)'),
+        String('category', 'Category'),  # {Achievement, Enrichment, Leadership, Service}
+        String('role', 'Role'),  # default 'participant'
+        String('award', 'Award'),  # optional
+        Number('hours', 'Hours'),  # optional
+    ]

@@ -1,10 +1,8 @@
-from typing import Any, Callable, Dict, Iterable, List
+from typing import Any, Dict, Iterable, List, Optional
 import data
 import model
 import myhtml as html
 from werkzeug.datastructures import ImmutableMultiDict as __ImmutableMultiDict
-
-from validate import number
 
 
 # ------------------------------
@@ -97,7 +95,7 @@ def records_to_selectable_table(
     records: List[dict],
     action: str = '',
     method: str = 'get',
-    search_by: str = 'student'
+    search_by: Optional[str] = None
 ) -> html.SelectableRecordTable:
     headers = list(records[0].keys())
     table = html.SelectableRecordTable(
@@ -111,7 +109,7 @@ def records_to_editable_table(
     records: List[dict],
     action: str = '',
     method: str = 'post',
-    search_by: str = 'student'
+    search_by: Optional[str] = None
 ) -> html.EditableRecordTable:
     headers = list(records[0].keys())
     table = html.EditableRecordTable(

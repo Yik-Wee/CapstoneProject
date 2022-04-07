@@ -6,8 +6,8 @@ from flask import Flask, redirect, render_template, request
 import convert
 import data
 import myhtml as html
-from model import Activity, Class, Club, Entity, Student
-from storage import Activities, Classes, Clubs, Collection, Membership, Participation, Students
+from model import Activity, ActivityParticipant, Class, Club, Entity, ClubMember, Student
+from storage import Activities, ActivityParticipants, Classes, ClubMembers, Clubs, Collection, Membership, Participation, Students
 
 app = Flask(__name__)
 
@@ -17,6 +17,8 @@ colls: Dict[str, Collection] = {
     'club': Clubs(key='club_id'),
     'class': Classes(key='class_id'),
     'activity': Activities(key='activity_id'),
+    'member': ClubMembers(key='student_id'),
+    'participant': ActivityParticipants(key='student_id'),
     'membership': Membership(key=None),
     'participation': Participation(key=None),
 }
@@ -179,11 +181,11 @@ def view_entity(page_name: str):
 # ------------------------------
 pages_edit_er_models: Dict[str, Dict[str, Entity]] = {
     'membership': {
-        'student': Student,  # TODO change 'student' to 'member'; Student to Member
+        'member': ClubMember,  # TODO change 'student' to 'member'; Student to Member
         'club': Club,
     },
     'participation': {
-        'student': Student,
+        'participant': ActivityParticipant,
         'activity': Activity,
     },
 }
@@ -199,7 +201,8 @@ def edit_relationship(page_name: str):
     relationship = pages_edit_er_models[page_name]
 
     # e.g. search_by == 'student' -> find all clubs the student is in
-    default_search_by = 'student'
+    # default_search_by = 'member' if page_name == 'membership'
+    default_search_by = list(relationship.keys())[0]
     search_by = request.args.get('search_by', default_search_by)
     if search_by not in relationship:
         search_by = default_search_by
@@ -291,7 +294,7 @@ def edit_relationship_confirm(page_name: str, search_by: str) -> str:
                 error=str(err),
             ), 400
         else:
-            table_old.add_row(old_record)
+            table_old.add_row(old_record)  # TODO cancel out deleted rows
             table_new.add_row(new_record)
 
         # if method == 'UPDATE':
@@ -301,6 +304,7 @@ def edit_relationship_confirm(page_name: str, search_by: str) -> str:
 
     return render_template(
         'dashboard/edit/edit_entity.html',
+        entity=entity.entity,
         confirm=True,
         table_old=table_old.html(),
         table_new=table_new.html(),
