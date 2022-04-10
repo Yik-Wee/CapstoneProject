@@ -352,7 +352,7 @@ class EditableRecordTable(RecordTable):
             html += '</tr>'
         html += '</table>'
         if self.__search_by is not None:
-            html += f'<input type="hidden" name="search_by" value="{self.__search_by}">'
+            html += f'<input type="hidden" name="search_by" value="{self.__search_by}" form="{form_id}">'
         html += f'<input type="submit" value="Save Changes" form="{form_id}">'
 
         return html

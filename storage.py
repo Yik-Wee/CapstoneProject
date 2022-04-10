@@ -16,6 +16,15 @@ class Collection:
 
 
 class Students(Collection):
+    def find(self, filter):
+        return [
+            {
+                'name': 'OBAMA',
+                'age': 69,
+                'year_enrolled': 2008,
+                'graduating_year': 2016,
+            }
+        ]
     pass
 
 
@@ -24,6 +33,12 @@ class Clubs(Collection):
         return [  # TETSING CODE
             {
                 'name': 'HAPPY FUN CLUB',
+            },
+            {
+                'name': 'EPIC POGGERS CLUB',
+            },
+            {
+                'name': 'ILLEGAL SUBSTANCE ABUSE CLUB',
             },
         ]
         pass

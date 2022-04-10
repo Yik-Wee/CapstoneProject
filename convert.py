@@ -173,7 +173,7 @@ class InvalidPostDataError(Exception):
 
 
 def req_form_to_records(
-    req_form: __ImmutableMultiDict,
+    req_form: Dict[str, List[str]],
     accepted_methods: Iterable[str],
     entity: model.Entity,
 ) -> List[Dict[str, Any]]:
@@ -215,7 +215,7 @@ def req_form_to_records(
     ------
     """
 
-    methods = req_form.getlist("method")
+    methods = req_form.get("method")
     records = []
 
     for method in methods:
@@ -230,7 +230,7 @@ def req_form_to_records(
         })
 
     for key in req_form:
-        values = req_form.getlist(key)
+        values = req_form.get(key)
         if len(values) != len(records):
             raise InvalidPostDataError('Inconsistent number of records 🤡')
 
