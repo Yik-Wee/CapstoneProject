@@ -109,11 +109,12 @@ def records_to_editable_table(
     records: List[dict],
     action: str = '',
     method: str = 'post',
-    search_by: Optional[str] = None
+    search_by: Optional[str] = None,
+    filter: Optional[dict] = None
 ) -> html.EditableRecordTable:
     headers = list(records[0].keys())
     table = html.EditableRecordTable(
-        headers=headers, action=action, method=method, search_by=search_by)
+        headers=headers, action=action, method=method, search_by=search_by, filter=filter)
     for record in records:
         table.add_row(record)
     return table

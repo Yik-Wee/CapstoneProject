@@ -298,10 +298,13 @@ class EditableRecordTable(RecordTable):
           (see `set_header_types()`)
         - search_by: str
           The records to filter/search by, specified in the request parameters. Default None
+        - filter: dict
+          The filter to search the records by
         """
         self.__action = kwargs.get('action', '')
         self.__method = kwargs.get('method', 'post')
         self.__search_by = kwargs.get('search_by')
+        self.__filter = kwargs.get('filter')
 
         header_types = kwargs.get('header_types', {})
         self.set_header_types(header_types)
@@ -353,6 +356,9 @@ class EditableRecordTable(RecordTable):
         html += '</table>'
         if self.__search_by is not None:
             html += f'<input type="hidden" name="search_by" value="{self.__search_by}" form="{form_id}">'
+        if self.__filter is not None:
+            for key, value in self.__filter.items():
+                html += f'<input type="hidden" name="filter:{key}" value="{value}" form="{form_id}">'
         html += f'<input type="submit" value="Save Changes" form="{form_id}">'
 
         return html
@@ -370,10 +376,13 @@ class SubmittableRecordTable(RecordTable):
           The headers/columns of the table
         - search_by: str
           The records to filter/search by, specified in the request parameters. Default None
+        - filter: dict
+          The filter to search by
         """
         self.__action = kwargs.get('action', '')
         self.__method = kwargs.get('method', 'post')
         self.__search_by = kwargs.get('search_by')
+        self.__filter = kwargs.get('filter')
         super().__init__(**kwargs)
 
     def action(self):
@@ -423,6 +432,10 @@ class SubmittableRecordTable(RecordTable):
         html += '</table>'
         if self.__search_by is not None:
             html += f'<input type="hidden" name="search_by" value="{self.__search_by}" form="{form_id}">'
+        if self.__filter is not None:
+            for key, value in self.__filter.items():
+                html += f'<input type="hidden" name="filter:{key}" value="{value}" form="{form_id}">'
+
         html += f'<input type="submit" value="Save Changes" form="{form_id}">'
 
         return html
