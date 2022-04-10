@@ -169,7 +169,7 @@ class RecordTable:
     """
 
     def __init__(self, **kwargs):
-        self.__rows = []
+        self._rows = []
         self.headers = kwargs['headers']
 
     def __repr__(self):
@@ -179,7 +179,7 @@ class RecordTable:
         )
 
     def rows(self):
-        return self.__rows
+        return self._rows
 
     def add_row(self, data: dict):
         """
@@ -196,7 +196,7 @@ class RecordTable:
         row = []
         for key in self.headers:
             row.append(data[key])
-        self.__rows.append(row)
+        self._rows.append(row)
 
     def html(self) -> str:
         """
@@ -214,7 +214,7 @@ class RecordTable:
         for header in self.headers:
             html += f'<th>{header}</th>'
         html += '</tr>'
-        for row in self.__rows:
+        for row in self._rows:
             html += '<tr>'
             for item in row:
                 html += f'<td>{item}</td>'
@@ -327,7 +327,7 @@ class EditableRecordTable(RecordTable):
         return self.__method
 
     def html(self) -> str:
-        form_id = '__editable_form'
+        form_id = 'table-form'
         html = f'<form action="{self.action()}" method="{self.method()}" id="{form_id}"></form>'
         html += '<table style="border: 1px solid black;">'
         html += '<tr>'
@@ -348,6 +348,76 @@ class EditableRecordTable(RecordTable):
                     <option value="UPDATE">Update</option>
                     <option value="DELETE">Delete</option>
                 </select>
+                </td>'''
+            html += '</tr>'
+        html += '</table>'
+        if self.__search_by is not None:
+            html += f'<input type="hidden" name="search_by" value="{self.__search_by}" form="{form_id}">'
+        html += f'<input type="submit" value="Save Changes" form="{form_id}">'
+
+        return html
+
+
+class SubmittableRecordTable(RecordTable):
+    def __init__(self, **kwargs):
+        """
+        Arguments:
+        - action: str
+          The action for each row's form element. Default '' (empty str)
+        - method: str
+          The method for each row's form element ('get' | 'post'). Default 'get'
+        - headers: list
+          The headers/columns of the table
+        - search_by: str
+          The records to filter/search by, specified in the request parameters. Default None
+        """
+        self.__action = kwargs.get('action', '')
+        self.__method = kwargs.get('method', 'post')
+        self.__search_by = kwargs.get('search_by')
+        super().__init__(**kwargs)
+
+    def action(self):
+        return self.__action
+
+    def method(self):
+        return self.__method
+
+    def add_row(self, old_data: dict, new_data: dict, method: str):
+        old_rows = []
+        new_rows = []
+        for key in self.headers:
+            old_rows.append(old_data[key])
+            new_rows.append(new_data[key])
+        self._rows.append({'old': old_rows, 'new': new_rows, 'method': method})
+
+    def html(self) -> str:
+        form_id = 'table-form'
+        html = f'<form action="{self.action()}" method="{self.method()}" id="{form_id}"></form>'
+        html += '<table style="border: 1px solid black;">'
+        html += '<tr>'
+        for header in self.headers:
+            html += f'<th>{header}</th>'
+        html += '</tr>'
+        for row in self.rows():
+            html += '<tr>'
+            old_row = row['old']
+            new_row = row['new']
+            method = row['method']
+            for i, new_item in enumerate(new_row):
+                old_item = old_row[i]
+                header = self.headers[i]
+                if method == 'DELETE':  # strikethrough to show deleted
+                    new_item_display = f'🗑️<s>{new_item}</s>'
+                else:
+                    new_item_display = new_item
+                
+                html += f'''<td>
+                    <input type="hidden" name="old:{header}" value="{old_item}" form="{form_id}">
+                    <input type="hidden" name="new:{header}" value="{new_item}" form="{form_id}">
+                    {new_item_display}
+                    </td>'''
+            html += f'''<td>
+                <input type="hidden" name="method" value="{method}" form="{form_id}">
                 </td>'''
             html += '</tr>'
         html += '</table>'

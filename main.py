@@ -260,10 +260,12 @@ def edit_relationship(page_name: str):
 
         records = to_edit_coll.find(filter)
 
-        table_edit = convert.records_to_editable_table(records, action='?confirm', method='post', search_by=search_by)
+        table_edit = convert.records_to_editable_table(
+            records, action='?confirm', method='post', search_by=search_by)
         header_types = convert.entity_to_header_types(entity=ENTITIES[to_edit])
         table_edit.set_header_types(header_types)
         table_edit = f'<h3>✍️ Edit {to_edit}</h3>' + table_edit.html()
+
         table = table_found + table_edit
     else:  # no records found
         table = '🦧can\'t find anything'
@@ -286,12 +288,12 @@ def edit_relationship_confirm(page_name: str):
             'errors.html',
             title='Invalid Post Data',
             error=f'field search_by: `{search_by}` is invalid'
-        )
+        ), 409
     to_edit = relationship[search_by]
     entity = ENTITIES[to_edit]
 
     try:
-        records = convert.req_form_to_records(post_data, ACCEPTED_METHODS, entity)
+        records = convert.post_data_to_records(post_data, ACCEPTED_METHODS, entity)
     except convert.InvalidPostDataError as err:
         return render_template(
             'errors.html',
@@ -300,9 +302,9 @@ def edit_relationship_confirm(page_name: str):
         ), 409
     
     headers = list(records[0]['old'].keys())
-    # TODO submittable record table instead of static record table
     try:
-        table_old, table_new = convert.old_new_records_to_tables(records, entity, headers)
+        table_old, table_new = convert.old_new_records_to_submittable_tables(
+            records, entity, headers, action=f'./{page_name}/result', method='post', search_by=search_by)
     except data.ValidationFailedError as err:
         return render_template(
             'dashboard/edit/failure.html',
@@ -315,6 +317,61 @@ def edit_relationship_confirm(page_name: str):
         confirm=True,
         table_old=table_old.html(),
         table_new=table_new.html(),
+    )
+
+
+@app.route('/dashboard/edit/<page_name>/result', methods=['POST'])
+def edit_relationship_result(page_name: str):
+    relationship = edit_pages_er[page_name]
+    post_data = request.form.to_dict(flat=False)
+    # flat=False converts into key: values[]. Take first 'search_by' to avoid parameter pollution
+    search_by = post_data.pop('search_by', None)[0]
+    if search_by is None or search_by not in relationship:
+        return render_template(
+            'errors.html',
+            title='Invalid Post Data',
+            error=f'field search_by: `{search_by}` is invalid'
+        ), 409
+    to_edit = relationship[search_by]
+    entity = ENTITIES[to_edit]
+
+    coll = colls[page_name]
+
+    try:
+        records = convert.post_data_to_records(post_data, ACCEPTED_METHODS, entity)
+    except convert.InvalidPostDataError as err:
+        return render_template(
+            'errors.html',
+            title='Invalid Post Data',
+            error=str(err),
+        ), 409
+
+    headers = list(records[0]['old'].keys())
+    try:
+        table_old, table_new = convert.old_new_records_to_tables(
+            records, entity, headers)
+    except data.ValidationFailedError as err:
+        return render_template(
+            'dashboard/edit/failure.html',
+            error=str(err),
+        ), 400
+
+    for rec in records:
+        old_rec = rec['old']
+        new_rec = rec['new']
+        method = rec['method']
+        if method == 'DELETE':
+            coll.delete(old_rec)
+        elif method == 'UPDATE':
+            coll.update(old_rec, new_rec)
+
+    return render_template(
+        'dashboard/edit/success.html',
+        entity=entity.entity,
+        search_by=search_by,
+        to_edit=to_edit,
+        table_old=table_old.html(),
+        table_new=table_new.html()
     )
 
 

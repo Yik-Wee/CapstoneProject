@@ -1,0 +1,14 @@
+{% extends "styled.html" %}
+
+{% block title %}
+Success!
+{% endblock %}
+
+{% block body %}
+<h1>Successfully edited {{ entity }}!</h1>
+<h2>Successfully edited {{ search_by }}'s {{ to_edit }}(s)!</h2>
+<h3>Old {{ to_edit }}(s)</h3>
+{{ table_old|safe }}
+<h3>New {{ to_edit }}(s)</h3>
+{{ table_new|safe }}
+{% endblock %}

@@ -175,8 +175,8 @@ class InvalidPostDataError(Exception):
 Records = List[Dict[str, Any]]
 
 
-def req_form_to_records(
-    req_form: Dict[str, List[str]],
+def post_data_to_records(
+    post_data: Dict[str, List[str]],
     accepted_methods: Iterable[str],
     entity: model.Entity,
 ) -> Records:
@@ -218,7 +218,7 @@ def req_form_to_records(
     ------
     """
 
-    methods = req_form.get("method")
+    methods = post_data.get("method")
     records = []
 
     for method in methods:
@@ -232,8 +232,8 @@ def req_form_to_records(
             "method": method,
         })
 
-    for key in req_form:
-        values = req_form.get(key)
+    for key in post_data:
+        values = post_data.get(key)
         if len(values) != len(records):
             raise InvalidPostDataError('Inconsistent number of records 🤡')
 
@@ -259,10 +259,37 @@ def req_form_to_records(
     return records
 
 
+def old_new_records_to_submittable_tables(
+    records: Records,
+    entity: model.Entity,
+    headers: List[str],
+    **kwargs,
+) -> Tuple[html.RecordTable, html.SubmittableRecordTable]:
+    table_old = html.RecordTable(headers=headers)
+    table_new_submit = html.SubmittableRecordTable(headers=headers, **kwargs)
+
+    for recs in records:
+        old_record = recs['old']
+        new_record = recs['new']
+        _method = recs['method']
+
+        # validate the records
+        entity.from_dict(old_record)
+        entity.from_dict(new_record)
+
+        if _method == 'UPDATE' and new_record == old_record:
+            continue
+        # only add records with changes
+        table_old.add_row(old_record)
+        table_new_submit.add_row(old_record, new_record, _method)
+
+    return table_old, table_new_submit
+
+
 def old_new_records_to_tables(
     records: Records,
     entity: model.Entity,
-    headers: List[str]
+    headers: List[str],
 ) -> Tuple[html.RecordTable, html.RecordTable]:
     table_old = html.RecordTable(headers=headers)
     table_new = html.RecordTable(headers=headers)
@@ -271,16 +298,13 @@ def old_new_records_to_tables(
         old_record = recs['old']
         new_record = recs['new']
         method = recs['method']
-        # validate the records
+        # validate records
         entity.from_dict(old_record)
         entity.from_dict(new_record)
+
         if method == 'DELETE':
-            # strikethrough the record to show deleted
-            new_record = {k: f'<s>{v}</s>' for k, v in new_record.items()}
-        elif new_record == old_record:
-            continue
-        # add records with changes
+            new_record = {k: f'🗑️<s>{v}</s>' for k, v in new_record.items()}
         table_old.add_row(old_record)
         table_new.add_row(new_record)
-    
+
     return table_old, table_new
