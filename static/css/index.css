@@ -29,18 +29,30 @@ input, textarea, select {
     font-family: inherit;
 }
 
-.table-input:not([type="submit"]) {
+input.table-input:not([type="submit"]) {
     border: 1.5px solid;
     border-color: #00CED1;
     background-color: #f0ffff;
     transition: border-color 100ms linear;
 }
 
-.table-input:not([type="submit"]):hover {
+input.table-input:not([type="submit"]):hover {
     border-color: #1E90FF;
 }
 
-.table-input:not([type="submit"]):focus {
+input.table-input:not([type="submit"]):focus {
     outline: none;
     border-color: #0000FF;
+}
+
+td.td-hide {
+    display: none;
+}
+
+tr.tr-delete {
+    background-color: #FF8080;
+}
+
+tr.tr-update {
+    background-color: #90EE90;
 }
