@@ -333,7 +333,10 @@ def edit_relationship_confirm(page_name: str):
             records, entity, headers,
             action=f'/dashboard/edit/{page_name}/result', method='post', search_by=search_by, filter=filter)
     except data.ValidationFailedError as err:
-        return render_template('dashboard/edit/failure.html', error=str(err)), 400
+        return render_template('dashboard/edit/failure.html', entity=page_name.title(), error=str(err)), 400
+
+    if len(table_new.rows()) == 0:
+        return render_template('dashboard/edit/failure.html', entity=page_name.title(), error='No changes made!'), 400
 
     return render_template(
         'dashboard/edit/edit_entity.html',
@@ -367,7 +370,7 @@ def edit_relationship_result(page_name: str):
         table_old, table_new = convert.old_new_records_to_tables(
             records, entity, headers)
     except data.ValidationFailedError as err:
-        return render_template('dashboard/edit/failure.html', error=str(err)), 400
+        return render_template('dashboard/edit/failure.html', entity=page_name.title(), error=str(err)), 400
 
     table_search_by = convert.records_to_table([filter])
 

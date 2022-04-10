@@ -219,7 +219,7 @@ def post_data_to_records(
     ------
     """
 
-    methods = post_data.get("method")
+    methods = post_data.get("method", [])
     records = []
 
     for method in methods:
