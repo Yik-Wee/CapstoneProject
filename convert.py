@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 import data
 import model
 import myhtml as html
@@ -172,11 +172,14 @@ class InvalidPostDataError(Exception):
     pass
 
 
+Records = List[Dict[str, Any]]
+
+
 def req_form_to_records(
     req_form: Dict[str, List[str]],
     accepted_methods: Iterable[str],
     entity: model.Entity,
-) -> List[Dict[str, Any]]:
+) -> Records:
     """
     Convert the post data `req_form` to records in the format:
     ```json
@@ -243,17 +246,41 @@ def req_form_to_records(
 
     # 💀 its 10:07 PM and im tired pls help :(
     for field in entity.fields:
-        print(field)
         for rec_data in records:
             value_old = rec_data['old'].get(field.name)
             value_new = rec_data['new'].get(field.name)
 
             if isinstance(field, data.Number):
-                print(f'\t{value_old}, {value_new}, {field.name}')
-                print(f'\t{rec_data}')
                 if value_old is not None:
                     rec_data['old'][field.name] = int(value_old)
                 if value_new is not None:
                     rec_data['new'][field.name] = int(value_new)
 
     return records
+
+
+def old_new_records_to_tables(
+    records: Records,
+    entity: model.Entity,
+    headers: List[str]
+) -> Tuple[html.RecordTable, html.RecordTable]:
+    table_old = html.RecordTable(headers=headers)
+    table_new = html.RecordTable(headers=headers)
+
+    for recs in records:
+        old_record = recs['old']
+        new_record = recs['new']
+        method = recs['method']
+        # validate the records
+        entity.from_dict(old_record)
+        entity.from_dict(new_record)
+        if method == 'DELETE':
+            # strikethrough the record to show deleted
+            new_record = {k: f'<s>{v}</s>' for k, v in new_record.items()}
+        elif new_record == old_record:
+            continue
+        # add records with changes
+        table_old.add_row(old_record)
+        table_new.add_row(new_record)
+    
+    return table_old, table_new

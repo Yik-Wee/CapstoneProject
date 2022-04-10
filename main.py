@@ -213,7 +213,7 @@ edit_pages_dropdown_options: Dict[str, Dict[str, str]] = {
 
 @app.route('/dashboard/edit/<page_name>', methods=['GET', 'POST'])
 @for_existing_pages(edit_pages_er)
-def edit_membership(page_name: str):
+def edit_relationship(page_name: str):
     # stuff to edit the Club Membership / Activity Participation
     table = None
     form = None
@@ -231,61 +231,7 @@ def edit_membership(page_name: str):
     to_edit_coll = colls[to_edit]
 
     if 'confirm' in request.args:
-        post_data = request.form.to_dict(flat=False)
-        # flat=False converts into key: values[]. Take first 'search_by' to avoid parameter pollution
-        search_by = post_data.pop('search_by', None)[0]
-        if search_by is None or search_by not in relationship:
-            return render_template(
-                'errors.html',
-                title='Invalid Post Data',
-                error=f'field search_by: `{search_by}` is invalid'
-            )
-        to_edit = relationship[search_by]
-        entity = ENTITIES[to_edit]
-
-        try:
-            records = convert.req_form_to_records(post_data, ACCEPTED_METHODS, entity)
-        except convert.InvalidPostDataError as err:
-            return render_template(
-                'errors.html',
-                title='Invalid Post Data',
-                error=str(err),
-            ), 409
-        
-        headers = list(records[0]['old'].keys())
-        # TODO submittable record table instead of static record table
-        table_old = html.RecordTable(headers=headers)
-        table_new = html.RecordTable(headers=headers)
-
-        for recs in records:
-            old_record = recs['old']
-            new_record = recs['new']
-            method = recs['method']
-            try:  # validate the records
-                entity.from_dict(old_record)
-                entity.from_dict(new_record)
-            except data.ValidationFailedError as err:
-                return render_template(
-                    'dashboard/edit/failure.html',
-                    error=str(err),
-                ), 400
-            else:
-                if method == 'DELETE':
-                    # strikethrough the record to show deleted
-                    new_record = {k: f'<s>{v}</s>' for k, v in new_record.items()}
-                elif new_record == old_record:
-                    continue
-                # add records with changes
-                table_old.add_row(old_record)
-                table_new.add_row(new_record)
-
-        return render_template(
-            'dashboard/edit/edit_entity.html',
-            entity=entity.entity,
-            confirm=True,
-            table_old=table_old.html(),
-            table_new=table_new.html(),
-        )
+        return edit_relationship_confirm(page_name)
 
     # get record filter from request params
     filter = request.args.to_dict()
@@ -327,6 +273,48 @@ def edit_membership(page_name: str):
         entity=page_name.title(),
         form=form,
         table=table,
+    )
+
+
+def edit_relationship_confirm(page_name: str):
+    relationship = edit_pages_er[page_name]
+    post_data = request.form.to_dict(flat=False)
+    # flat=False converts into key: values[]. Take first 'search_by' to avoid parameter pollution
+    search_by = post_data.pop('search_by', None)[0]
+    if search_by is None or search_by not in relationship:
+        return render_template(
+            'errors.html',
+            title='Invalid Post Data',
+            error=f'field search_by: `{search_by}` is invalid'
+        )
+    to_edit = relationship[search_by]
+    entity = ENTITIES[to_edit]
+
+    try:
+        records = convert.req_form_to_records(post_data, ACCEPTED_METHODS, entity)
+    except convert.InvalidPostDataError as err:
+        return render_template(
+            'errors.html',
+            title='Invalid Post Data',
+            error=str(err),
+        ), 409
+    
+    headers = list(records[0]['old'].keys())
+    # TODO submittable record table instead of static record table
+    try:
+        table_old, table_new = convert.old_new_records_to_tables(records, entity, headers)
+    except data.ValidationFailedError as err:
+        return render_template(
+            'dashboard/edit/failure.html',
+            error=str(err),
+        ), 400
+
+    return render_template(
+        'dashboard/edit/edit_entity.html',
+        entity=entity.entity,
+        confirm=True,
+        table_old=table_old.html(),
+        table_new=table_new.html(),
     )
 
 
