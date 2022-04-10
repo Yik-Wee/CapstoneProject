@@ -420,7 +420,7 @@ class SubmittableRecordTable(RecordTableForm):
                     {table_input(type="hidden", name="new:"+header, value=new_item, form=self.form_id)}
                     {new_item_display}
                     </td>'''
-            html += f'''<td>
+            html += f'''<td class="td-hide">
                 {table_input(type="hidden", name="method", value=method, form=self.form_id)}
                 </td>'''
             html += '</tr>'
