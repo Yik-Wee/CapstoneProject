@@ -345,7 +345,7 @@ class EditableRecordTable(RecordTableForm):
 
     def html(self) -> str:
         html = f'<form action="{self.action()}" method="{self.method()}" id="{self.form_id}"></form>'
-        html += '<table>'
+        html += '<table id="edit-table">'
         html += self._gen_headers_html()
         for row in self.rows():
             html += '<tr>'
@@ -364,6 +364,31 @@ class EditableRecordTable(RecordTableForm):
                 </td>'''
             html += '</tr>'
         html += '</table>'
+
+        # Inject js to dynamically add/insert <tr> with <inputs> & appropriate data
+        _new_inputs = []
+        for header in self.headers:
+            _new_inputs.append(
+                '<td>' +
+                table_input(type="hidden", name="old:"+header, value="(-)", form=self.form_id) +
+                table_input(type=self.__header_types[header], name="new:"+header, form=self.form_id) +
+                '</td>'
+            )
+        _new_inputs = ''.join(_new_inputs)
+        html += f'''<script>
+        function insertRow() {{
+            const tr = document.createElement("tr");
+            tr.className = "tr-insert";
+            tr.innerHTML = `{_new_inputs}` + 
+                `<td>
+                <input type="hidden" name="method" value="INSERT" form="{self.form_id}">
+                <button onclick="event.target.parentNode.parentNode.remove();">Remove</button>
+                </td>`;
+            document.getElementById("edit-table").appendChild(tr);
+        }}
+        </script>
+        <button onclick="insertRow()">+</button>'''
+
         if self.search_by() is not None:
             html += table_input(type="hidden", name="search_by", value=self.search_by(), form=self.form_id)
         if self.__filter is not None:

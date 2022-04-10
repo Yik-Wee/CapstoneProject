@@ -194,12 +194,12 @@ def post_data_to_records(
                 "name": ...,
                 "...": ...,
             },
-            "method": "UPDATE" | "DELETE"
+            "method": "UPDATE" | "DELETE" | "INSERT"
         },
         {
             "old": {...},
             "new": {...},
-            "method": "UPDATE" | "DELETE"
+            "method": "UPDATE" | "DELETE" | "INSERT"
         },
         ...
     ]
@@ -236,7 +236,8 @@ def post_data_to_records(
     for key in post_data:
         values = post_data.get(key)
         if len(values) != len(records):
-            raise InvalidPostDataError('Inconsistent number of records 🤡')
+            raise InvalidPostDataError(
+                f'''Inconsistent number of records 🤡. length `{values}` != length `{records}`''')
 
         _key = key[4:]
         for idx, value in enumerate(values):
@@ -252,10 +253,15 @@ def post_data_to_records(
             value_new = rec_data['new'].get(field.name)
 
             if isinstance(field, data.Number):
-                if value_old is not None:
+                # numeric values submitted in post_data must be valid numbers
+                if not value_old.isdecimal() and method != 'INSERT':
+                    raise InvalidPostDataError(f'field `{field.name}`: `{value_old}` is not a number.')
+                if not value_new.isdecimal():
+                    raise InvalidPostDataError(f'field `{field.name}`: `{value_new}` is not a number.')
+
+                if rec_data['method'] != 'INSERT':
                     rec_data['old'][field.name] = int(value_old)
-                if value_new is not None:
-                    rec_data['new'][field.name] = int(value_new)
+                rec_data['new'][field.name] = int(value_new)
 
     return records
 
@@ -275,7 +281,8 @@ def old_new_records_to_submittable_tables(
         _method = recs['method']
 
         # validate the records
-        entity.from_dict(old_record)
+        if _method != 'INSERT':
+            entity.from_dict(old_record)
         entity.from_dict(new_record)
 
         if _method == 'UPDATE' and new_record == old_record:
@@ -300,7 +307,8 @@ def old_new_records_to_tables(
         new_record = recs['new']
         method = recs['method']
         # validate records
-        entity.from_dict(old_record)
+        if method != 'INSERT':
+            entity.from_dict(old_record)
         entity.from_dict(new_record)
 
         if method == 'DELETE':

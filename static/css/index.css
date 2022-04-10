@@ -54,5 +54,9 @@ tr.tr-delete {
 }
 
 tr.tr-update {
+    background-color: #FFAA77;
+}
+
+tr.tr-insert {
     background-color: #90EE90;
 }

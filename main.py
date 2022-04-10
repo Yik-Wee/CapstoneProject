@@ -186,7 +186,7 @@ def view_entity(page_name: str):
 # ------------------------------
 # edit Membership(Student-Club)/Participation(Student-Activity)
 # ------------------------------
-ACCEPTED_METHODS = ('UPDATE', 'DELETE')
+ACCEPTED_METHODS = ('UPDATE', 'DELETE', 'INSERT')
 ENTITIES: Dict[str, Entity] = {
     'student': Student,
     'member': ClubMember,
@@ -382,6 +382,9 @@ def edit_relationship_result(page_name: str):
         elif method == 'UPDATE':
             # coll.update(filter, rec['old'], rec['new'])
             coll.update(rec['old'], rec['new'])
+        elif method == 'INSERT':
+            # coll.insert(filter, rec['new'])
+            coll.insert(rec['new'])
 
     return render_template(
         'dashboard/edit/success.html',
