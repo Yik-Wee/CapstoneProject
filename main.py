@@ -245,13 +245,17 @@ def edit_relationship(page_name: str):
     filter.pop('search_by', None)
 
     # construct form to search for records to edit which puts filter in get request params (request.args)
-    form = html.RecordForm(action='', method='get')
     options = edit_pages_dropdown_options[page_name]
     options = { search_by: options[search_by], **options }
-    form.dropdown_input('Search By', 'search_by', options)
-    form.submit_input('👈 Choose')
+
+    search_by_form = html.RecordForm(action='', method='get')
+    search_by_form.dropdown_input('Search By', 'search_by', options)
+    search_by_form.submit_input('👈 Choose')
+
+    form = html.RecordForm(action='', method='get')
+    form.hidden_input('search_by', search_by)
     form = convert.filter_to_form(filter, ENTITIES[search_by], form)
-    form = form.html()
+    form = search_by_form.html() + form.html()
 
     # find record(s) corresponding to the filter
     records = search_by_coll.find(filter)
