@@ -290,8 +290,7 @@ def edit_relationship(page_name: str):
     )
 
 
-def get_search_by_and_filter(post_data: dict):
-    search_by = post_data.pop('search_by', [None])[0]
+def get_filter(post_data: dict, entity: Entity) -> dict:
     filter = {}
     for key in post_data:
         if key.startswith('filter:'):
@@ -301,24 +300,24 @@ def get_search_by_and_filter(post_data: dict):
     for key in filter:
         post_data.pop(f'filter:{key}')
 
-    _entity = ENTITIES[search_by]
-    for field in _entity.fields:
+    for field in entity.fields:
         value = filter.get(field.name)
         if value == '':
             filter.pop(field.name)
         elif value is not None and isinstance(field, data.Number):
             filter[field.name] = int(value)
 
-    return search_by, filter
+    return filter
 
 
-def edit_relationship_confirm(page_name: str):
+def edit_relationship_confirm(page_name: str, save_changes=False):
     relationship = edit_pages_er[page_name]
     post_data = request.form.to_dict(flat=False)
-    search_by, filter = get_search_by_and_filter(post_data)
-
+    search_by = post_data.pop('search_by', [None])[0]
     if search_by is None or search_by not in relationship:
-        return invalid_post_data(f'field search_by: `{search_by}` is invalid')
+        return invalid_post_data(f'field `search_by`: `{search_by}` is invalid')
+
+    filter = get_filter(post_data, ENTITIES[search_by])
     to_edit = relationship[search_by]
     entity = ENTITIES[to_edit]
 
@@ -328,10 +327,49 @@ def edit_relationship_confirm(page_name: str):
         return invalid_post_data(str(err))
     
     headers = list(records[0]['old'].keys())
+
+    if save_changes:  # not confirming anymore, edit database
+        try:
+            table_old, table_new = convert.old_new_records_to_tables(records, entity, headers)
+        except data.ValidationFailedError as err:
+            return render_template('dashboard/edit/failure.html', entity=page_name.title(), error=str(err)), 400
+
+        table_search_by = convert.records_to_table([filter])
+        coll = colls[page_name]
+
+        for rec in records:  # update db to reflect changes
+            method = rec['method']
+            if method == 'DELETE':
+                # coll.delete(filter, rec['old'])
+                coll.delete(rec['old'])
+            elif method == 'UPDATE':
+                # coll.update(filter, rec['old'], rec['new'])
+                coll.update(rec['old'], rec['new'])
+            elif method == 'INSERT':
+                # coll.insert(filter, rec['new'])
+                coll.insert(rec['new'])
+
+        return render_template(
+            'dashboard/edit/success.html',
+            entity=entity.entity,
+            search_by=filter.get('name') or ENTITIES[search_by].entity,
+            to_edit=to_edit,
+            table_search_by=table_search_by.html(),
+            table_old=table_old.html(),
+            table_new=table_new.html()
+        )
+
+    # confirming changes, display changes in old and new table
     try:
         table_old, table_new = convert.old_new_records_to_submittable_tables(
-            records, entity, headers,
-            action=f'/dashboard/edit/{page_name}/result', method='post', search_by=search_by, filter=filter)
+            records,
+            entity,
+            headers,
+            action=f'/dashboard/edit/{page_name}/result',
+            method='post',
+            search_by=search_by,
+            filter=filter,
+        )
     except data.ValidationFailedError as err:
         return render_template('dashboard/edit/failure.html', entity=page_name.title(), error=str(err)), 400
 
@@ -349,52 +387,7 @@ def edit_relationship_confirm(page_name: str):
 
 @app.route('/dashboard/edit/<page_name>/result', methods=['POST'])
 def edit_relationship_result(page_name: str):
-    relationship = edit_pages_er[page_name]
-    post_data = request.form.to_dict(flat=False)
-    search_by, filter = get_search_by_and_filter(post_data)
-
-    if search_by is None or search_by not in relationship:
-        return invalid_post_data(f'field search_by: `{search_by}` is invalid')
-    to_edit = relationship[search_by]
-    entity = ENTITIES[to_edit]
-
-    coll = colls[page_name]
-
-    try:
-        records = convert.post_data_to_records(post_data, ACCEPTED_METHODS, entity)
-    except convert.InvalidPostDataError as err:
-        return invalid_post_data(err)
-
-    headers = list(records[0]['old'].keys())
-    try:
-        table_old, table_new = convert.old_new_records_to_tables(
-            records, entity, headers)
-    except data.ValidationFailedError as err:
-        return render_template('dashboard/edit/failure.html', entity=page_name.title(), error=str(err)), 400
-
-    table_search_by = convert.records_to_table([filter])
-
-    for rec in records:
-        method = rec['method']
-        if method == 'DELETE':
-            # coll.delete(filter, rec['old'])
-            coll.delete(rec['old'])
-        elif method == 'UPDATE':
-            # coll.update(filter, rec['old'], rec['new'])
-            coll.update(rec['old'], rec['new'])
-        elif method == 'INSERT':
-            # coll.insert(filter, rec['new'])
-            coll.insert(rec['new'])
-
-    return render_template(
-        'dashboard/edit/success.html',
-        entity=entity.entity,
-        search_by=filter.get('name') or ENTITIES[search_by].entity,
-        to_edit=to_edit,
-        table_search_by=table_search_by.html(),
-        table_old=table_old.html(),
-        table_new=table_new.html()
-    )
+    return edit_relationship_confirm(page_name, save_changes=True)
 
 
 @app.route('/login')
