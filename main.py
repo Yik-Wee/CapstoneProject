@@ -271,9 +271,10 @@ def edit_relationship(page_name: str):
 
         table_edit = convert.records_to_editable_table(
             records, action='?confirm', method='post', search_by=search_by, filter=filter)
-        header_types = convert.entity_to_header_types(entity=ENTITIES[to_edit])
+        entity_to_edit = ENTITIES[to_edit]
+        header_types = convert.entity_to_header_types(entity=entity_to_edit)
         table_edit.set_header_types(header_types)
-        table_edit = f'<h3>✍️ Edit {to_edit}</h3>' + table_edit.html()
+        table_edit = f'<div class="outline"><h3>✍️ Edit {entity_to_edit.entity}s</h3>{table_edit.html()}</div>'
 
         table = table_found + table_edit
     else:  # no records found
