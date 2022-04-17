@@ -1,8 +1,7 @@
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Tuple
 import data
 import model
 import myhtml as html
-from werkzeug.datastructures import ImmutableMultiDict as __ImmutableMultiDict
 
 
 # ------------------------------
@@ -15,6 +14,9 @@ def __add_input_by_field(
     field: data.Field,
     value: str = ''
 ) -> None:
+    """
+    Add an input of specific type to the `form` based on the `field` type
+    """
     if isinstance(field, data.Date):
         form.date_input(field.label, field.name, value=value)
     elif isinstance(field, data.Email):
@@ -79,6 +81,12 @@ def entity_to_table(entity: model.Entity) -> html.RecordTable:
 
 def records_to_table(records: List[dict]) -> html.RecordTable:
     """
+    IMPORTANT
+    ---------
+    Skips data validation. Only use if `records` don't need validation
+    (e.g. `records` are obtained from the database itself)
+
+    ---------
     Converts the list of records (`records`) into a `RecordTable`,
     assuming each record: `dict` has the same keys and `records` is
     not empty.
@@ -91,37 +99,45 @@ def records_to_table(records: List[dict]) -> html.RecordTable:
     return table
 
 
-def records_to_selectable_table(
-    records: List[dict],
-    action: str = '',
-    method: str = 'get',
-    search_by: Optional[str] = None
-) -> html.SelectableRecordTable:
+def records_to_selectable_table(records: List[dict], **kwargs) -> html.SelectableRecordTable:
+    """
+    IMPORTANT
+    ---------
+    Skips data validation. Only use if `records` don't need validation
+    (e.g. `records` are obtained from the database itself)
+
+    ---------
+    Converts the `records` to `SelectableRecordTable`, initialising table from `**kwargs`
+    """
     headers = list(records[0].keys())
-    table = html.SelectableRecordTable(
-        headers=headers, action=action, method=method, search_by=search_by)
+    table = html.SelectableRecordTable(headers=headers, **kwargs)
     for record in records:
         table.add_row(record)
     return table
 
 
-def records_to_editable_table(
-    records: List[dict],
-    action: str = '',
-    method: str = 'post',
-    search_by: Optional[str] = None,
-    filter: Optional[dict] = None
-) -> html.EditableRecordTable:
+def records_to_editable_table(records: List[dict], **kwargs) -> html.EditableRecordTable:
+    """
+    IMPORTANT
+    ---------
+    Skips data validation. Only use if `records` don't need validation
+    (e.g. `records` are obtained from the database itself)
+
+    ---------
+    Converts the `records` to `EditableRecordTable`, initialising table from `**kwargs`
+    """
     headers = list(records[0].keys())
-    table = html.EditableRecordTable(
-        headers=headers, action=action, method=method, search_by=search_by, filter=filter)
+    table = html.EditableRecordTable(headers=headers, **kwargs)
     for record in records:
         table.add_row(record)
     return table
 
 
 def filter_to_form(filter: dict, entity: model.Entity, form: html.RecordForm) -> html.RecordForm:
-    # a bit scuffed 🗿
+    """
+    Convert the filter containing all or some of the `entity`'s fields to a form.
+    Similar to `entity_to_hidden_form()` but is not hidden and skips validation.
+    """
     for field in entity.fields:
         value = filter.get(field.name)
         __add_input_by_field(form, field, value=value or '')
@@ -135,6 +151,9 @@ def filter_to_form(filter: dict, entity: model.Entity, form: html.RecordForm) ->
 
 
 def __field_to_input_type(field: data.Field) -> str:
+    """
+    Returns the type of the html input tag based on the `field` instance
+    """
     if isinstance(field, data.Date):
         return 'date'
     elif isinstance(field, data.Email):
@@ -169,42 +188,56 @@ def entity_to_header_types(entity: model.Entity) -> Dict[str, str]:
     return header_types
 
 
+"""
+Utils to handle record changes (`RecordDeltas`)
+The http post data in `request.form` contains the old records to be changed
+and the new records to be changed to. `post_data_to_records()` does this
+conversion and returns a list of records represented as dicts containing
+this information. These are aliased as `RecordDeltas` for convenience.
+"""
+
+
 class InvalidPostDataError(Exception):
     pass
 
 
-Records = List[Dict[str, Any]]
+RecordDeltas = List[Dict[str, Any]]
+"""
+The list of record changes in the format:
+```json
+[
+    {
+        "old": {
+            "name": ...,
+            "...": ...,
+        },
+        "new": {
+            "name": ...,
+            "...": ...,
+        },
+        "method": "UPDATE" | "DELETE" | "INSERT"
+    },
+    {
+        "old": {...},
+        "new": {...},
+        "method": "UPDATE" | "DELETE" | "INSERT"
+    },
+    ...
+]
+```
+"""
 
 
-def post_data_to_records(
+def post_data_to_record_deltas(
     post_data: Dict[str, List[str]],
     accepted_methods: Iterable[str],
     entity: model.Entity,
-) -> Records:
+) -> RecordDeltas:
     """
-    Convert the post data `req_form` to records in the format:
-    ```json
-    [
-        {
-            "old": {
-                "name": ...,
-                "...": ...,
-            },
-            "new": {
-                "name": ...,
-                "...": ...,
-            },
-            "method": "UPDATE" | "DELETE" | "INSERT"
-        },
-        {
-            "old": {...},
-            "new": {...},
-            "method": "UPDATE" | "DELETE" | "INSERT"
-        },
-        ...
-    ]
-    ```
+    Convert the post data `req_form` to `RecordDeltas`.
 
+    Params
+    ------
     `entity`: `Entity`
     - Used to cast fields into the appropriate types (e.g. "year" field: str -> int)
 
@@ -217,6 +250,7 @@ def post_data_to_records(
 
     Return
     ------
+    `RecordDeltas`. See documentation for `RecordDeltas` for format of returned data.
     """
 
     methods = post_data.get("method", [])
@@ -266,12 +300,30 @@ def post_data_to_records(
     return records
 
 
-def old_new_records_to_submittable_tables(
-    records: Records,
+def record_deltas_to_submittable_tables(
+    records: RecordDeltas,
     entity: model.Entity,
     headers: List[str],
     **kwargs,
 ) -> Tuple[html.RecordTable, html.SubmittableRecordTable]:
+    """
+    Converts the `records` to a normal `RecordTable` and a `SubmittableRecordTable` which
+    encapsulates the `RecordDeltas` to be submitted in a post request.
+
+    Params
+    ------
+    `records`: `RecordDeltas`
+    - The changes to the records to be displayed in the 2 tables, and encapsulated in the
+      `SubmittableRecordTable`
+    `entity`: `Entity`
+    - The entity to be used for data validation of the `RecordDeltas`.
+    `headers`: `List[str]`
+    - The headers of the 2 tables.
+
+    Return
+    ------
+    A tuple in the format: `(record_table, submittable_record_table)`
+    """
     table_old = html.RecordTable(headers=headers)
     table_new_submit = html.SubmittableRecordTable(headers=headers, **kwargs)
 
@@ -294,11 +346,14 @@ def old_new_records_to_submittable_tables(
     return table_old, table_new_submit
 
 
-def old_new_records_to_tables(
-    records: Records,
+def record_deltas_to_tables(
+    records: RecordDeltas,
     entity: model.Entity,
     headers: List[str],
 ) -> Tuple[html.RecordTable, html.RecordTable]:
+    """
+    Converts the `records` to 2 normal `RecordTable`s using `entity` for data validation
+    """
     table_old = html.RecordTable(headers=headers)
     table_new = html.RecordTable(headers=headers)
 
