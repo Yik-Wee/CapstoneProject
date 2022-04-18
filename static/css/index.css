@@ -29,6 +29,12 @@ td, th {
     text-align: center;
 }
 
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
 input, textarea, select {
     font-family: inherit;
 }
@@ -63,4 +69,11 @@ tr.tr-update {
 
 tr.tr-insert {
     background-color: #90EE90;
+}
+
+.outline {
+    outline: 2px solid black;
+    padding: 1ch;
+    margin: 2px;
+    margin-top: 0;
 }
