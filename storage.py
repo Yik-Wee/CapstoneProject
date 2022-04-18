@@ -35,19 +35,19 @@ class Students(Collection):
 
             conn.commit()
 
-    def insert(self, record: "dict"):
+    def insert(self, record: "dict") -> None:
         with sqlite3.connect(self.db_name) as conn:
             c = conn.cursor()
             c.execute("""INSERT INTO student VALUES (?, ?, ?, ?, ?)""", record.values())
             c.commit()
 
-    def find(self, filter: "dict"):
+    def find(self, filter: "dict") -> "dict":
         with sqlite3.connect(self.db_name) as conn:
             c = conn.cursor()
             c.execute("""SELECT * FROM student
                       WHERE """)
 
-    def update(self, filter, new_record):
+    def update(self, filter, new_record) -> None:
         with sqlite3.connect(self.db_name) as conn:
             c = conn.cursor()
             c.execute("""""")
