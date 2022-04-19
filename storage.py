@@ -1,6 +1,12 @@
 """
 Storage classes to interface with the db.
 """
+
+"""
+HALPPP
+- for find method need to do sth for when not found ?
+- i dont need the * for delete ah??
+"""
 import sqlite3
 
 
@@ -126,28 +132,58 @@ class Students(Collection):
         for condition in conditions:
             sql += f"{condition} = ? AND "
 
-        sql = sql[:-4]
+        sql = sql[:-4] #remove the final AND 
 
         with sqlite3.connect(self.db_path) as conn:
-
             c = conn.cursor()
             c.execute(f"""SELECT * FROM student
                       WHERE {sql} """, list(values))
             record = c.fetchone()
-            return record
+            return record 
 
     def update(self, filter, new_record) -> None:
-        # with sqlite3.connect(self.db_name) as conn:
-        #     c = conn.cursor()
-
-        #     c.execute("""""")
+        
+        with sqlite3.connect(self.db_path) as conn:
+            c = conn.cursor()
+            c.execute("""UPDATE student SET """)
+            conn.commit()
         pass
 
     def delete(self, filter):
+        #check that keys in filter match the column names
+        for key, value in filter.items():
+            if key not in self.column_names:
+                raise KeyError(f"{key} is not a valid column name")
+
+        conditions = filter.keys()
+        values = filter.values()
+        sql = ''
+
+        for condition in conditions:
+            sql += f"{condition} = ? AND "
+
+        sql = sql[:-4] #remove the final AND 
+
+        with sqlite3.connect(self.db_path) as conn:
+            c = conn.cursor()
+            c.execute(f"""DELETE FROM student WHERE {sql}""", list(values))
+            conn.commit()
         pass
 
 
 class Subject(Collection):
+    def __init__(self, db_path):
+        self.db_path = db_path
+        with sqlite3.connect(self.db_path) as conn:
+            c = conn.cursor()
+            c.execute("""CREATE TABLE IF NOT EXISTS subject(
+                    id INTEGER, 
+                    name TEXT,
+                    level TEXT,
+                    PRIMARY KEY(id)
+                    )""")
+            conn.commit()
+    
     pass
 
 
