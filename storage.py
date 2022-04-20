@@ -142,10 +142,34 @@ class Students(Collection):
             return record 
 
     def update(self, filter, new_record) -> None:
-        
+        #these stuff is for filter
+        # Check that filter keys are valid column names
+        for key, value in filter.items():
+            if key not in self.column_names:
+                raise KeyError(f"{key} is not a valid column name")
+                
+        conditions = filter.keys()
+        values = filter.values()
+        sql = ''
+
+        #this part is for the new record              
+        for key, value in new_record.items():
+            if key not in self.column_names:
+                raise KeyError(f"{key} is not a valid column name")
+
+        keys = new_values.keys()
+        new_values = new_values.values()
+        new_sql = ''
+
+        for key in keys:
+            sql += f"{condition} = ?, "
+
+        sql = sql[:-2] #remove the final '', ' 
         with sqlite3.connect(self.db_path) as conn:
             c = conn.cursor()
-            c.execute("""UPDATE student SET """)
+            c.execute(f"""UPDATE student 
+                      SET 
+                      WHERE {sql} """)
             conn.commit()
         pass
 
