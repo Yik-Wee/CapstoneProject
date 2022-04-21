@@ -5,7 +5,7 @@ Storage classes to interface with the db.
 """
 HALPPP
 - for find method need to do sth for when not found ?
-- i dont need the * for delete ah??
+- if nth for find return empty list
 """
 import sqlite3
 
@@ -42,7 +42,7 @@ class Collection:
     def __init__(self, db_path: str):
         """Initialise a Collection which interfaces with the db specified by `db_path`"""
         pass
-
+    
     def insert(self, record: dict) -> None:
         """
         Insert a record into the db.
@@ -91,10 +91,10 @@ class Collection:
 class Students(Collection):
     # PLEASE BE CONSISTENT IS IT student_id OR id ?????????
     # WHERE IS class_id YOU WROTE IT IN THE DATA SCHEMA AND ITS NOT HERE
-    column_names = ['student_id', 'name', 'age', 'year_enrolled', 'graduating_year']
 
     def __init__(self, db_path):
         self.db_path = db_path
+        self.column_names = ['student_id', 'name', 'age', 'year_enrolled', 'graduating_year', 'class_id']
         with sqlite3.connect(self.db_path) as conn:
             c = conn.cursor()
             c.execute("""CREATE TABLE IF NOT EXISTS student(
@@ -103,17 +103,39 @@ class Students(Collection):
                     age INTEGER,
                     year_enrolled INTEGER,
                     graduating_year INTEGER,
+                    class_id INTEGER,
                     PRIMARY KEY(student_id)
                      )""")
             conn.commit()
 
+    def check_column(self, to_check: dict):
+        # Check that filter keys are valid column names
+        for key, value in to_check.items():
+            if key not in self.column_names:
+                raise KeyError(f"{key} is not a valid column name")
+
+    def execute(self, sql, values={}):
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+            c.execute(sql, values)
+            results = c.fetchall()
+            conn.commit()
+            # conn.close() is automatic
+            
+            if results == []:
+                return []
+            else:
+                actually_dict = []
+                for record in results:
+                    actually_dict.append(dict(record))
+                return actually_dict
+
     def insert(self, record: dict) -> None:
         # TODO allow omission of `id` from record.
-        with sqlite3.connect(self.db_path) as conn:
-            c = conn.cursor()
-            c.execute("""INSERT INTO student VALUES (?, ?, ?, ?, ?)""",
-                      list(record.values()))
-            conn.commit()
+        self.execute("""INSERT INTO student VALUES (?, ?, ?, ?, ?, ?)""", list(record.values()))
+
+            
 
     def find(self, filter: dict) -> dict:
         """
@@ -121,9 +143,7 @@ class Students(Collection):
         Return all columns from each record.
         """
         # Check that filter keys are valid column names
-        for key, value in filter.items():
-            if key not in self.column_names:
-                raise KeyError(f"{key} is not a valid column name")
+        self.check_column(filter)
 
         conditions = filter.keys()
         values = filter.values()
@@ -132,52 +152,45 @@ class Students(Collection):
         for condition in conditions:
             sql += f"{condition} = ? AND "
 
-        sql = sql[:-4] #remove the final AND 
-
-        with sqlite3.connect(self.db_path) as conn:
-            c = conn.cursor()
-            c.execute(f"""SELECT * FROM student
-                      WHERE {sql} """, list(values))
-            record = c.fetchone()
-            return record 
+        sql = sql[:-4] #remove the final AND
+        sql = f"""SELECT * 
+                  FROM student
+                  WHERE {sql} """
+        return self.execute(sql, list(values))
 
     def update(self, filter, new_record) -> None:
-        #these stuff is for filter
-        # Check that filter keys are valid column names
-        for key, value in filter.items():
-            if key not in self.column_names:
-                raise KeyError(f"{key} is not a valid column name")
-                
-        conditions = filter.keys()
-        values = filter.values()
-        sql = ''
+        #check the columns in both filter and new_record
+        self.check_column(filter)
+        self.check_column(new_record)
 
-        #this part is for the new record              
-        for key, value in new_record.items():
-            if key not in self.column_names:
-                raise KeyError(f"{key} is not a valid column name")
-
-        keys = new_values.keys()
-        new_values = new_values.values()
+        #sql for the SET part
+        keys = new_record.keys()
+        new_values = new_record.values()
         new_sql = ''
 
         for key in keys:
-            sql += f"{condition} = ?, "
+            new_sql += f"{key} = ?, "
 
-        sql = sql[:-2] #remove the final '', ' 
-        with sqlite3.connect(self.db_path) as conn:
-            c = conn.cursor()
-            c.execute(f"""UPDATE student 
-                      SET 
-                      WHERE {sql} """)
-            conn.commit()
-        pass
+        new_sql = new_sql[:-2] #remove the final ','
+
+        #sql for the WHERE part
+        conditions = filter.keys()
+        values = filter.values()
+        sql = ''
+        
+        for condition in conditions:
+            sql += f"{condition} = ? AND "
+
+        sql = sql[:-4] #remove the final AND
+        both = list(new_values) + list(values)
+        sql = f"""UPDATE student 
+                  SET {new_sql}
+                  WHERE {sql} """
+        return self.execute(sql, list(both))
 
     def delete(self, filter):
         #check that keys in filter match the column names
-        for key, value in filter.items():
-            if key not in self.column_names:
-                raise KeyError(f"{key} is not a valid column name")
+        self.check_column(filter)
 
         conditions = filter.keys()
         values = filter.values()
@@ -185,15 +198,10 @@ class Students(Collection):
 
         for condition in conditions:
             sql += f"{condition} = ? AND "
-
-        sql = sql[:-4] #remove the final AND 
-
-        with sqlite3.connect(self.db_path) as conn:
-            c = conn.cursor()
-            c.execute(f"""DELETE FROM student WHERE {sql}""", list(values))
-            conn.commit()
-        pass
-
+        
+        sql = sql[:-5] #remove the final AND 
+        self.execute(f"""DELETE FROM student WHERE {sql}""", list(values))
+            
 
 class Subject(Collection):
     def __init__(self, db_path):
@@ -225,15 +233,32 @@ class Classes(Collection):
 
 if __name__ == '__main__':
     # testing code
-    print('eorjgpoerg')
     people = Students('school')
+    
     ren = {
         'student_id': 1,
         'name': 'cassey',
         'age': 17,
         'year_enrolled': 2021,
-        'graduating_year': 2022
+        'graduating_year': 2022,
+        'class_id': 1
     }
 
+    ren_pt2 = {
+        'student_id': 1,
+        'name': 'cassey',
+        'age': 18,
+        'year_enrolled': 2021,
+        'graduating_year': 2022,
+        'class_id': 1
+    }
+    people.delete(ren_pt2)
     people.insert(ren)
-    print(people.find({'name': 'cassey', 'age': 17}))
+    people.find({'name': 'cassey', 'age': 17})
+    people.update({'name': 'cassey'}, {'age': 18})
+    print(people.find({'name': 'cassey', 'age': 18}))
+    found = people.find({'class_id': 1})
+    for student in found:
+        print(dict(student))
+        print(student['name'])
+
