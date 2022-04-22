@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Tuple
+from typing import Any, Dict, Iterable, List, Tuple, TypedDict
 import data
 import model
 import myhtml as html
@@ -165,6 +165,29 @@ def __field_to_input_type(field: data.Field) -> str:
     return 'text'  # fallback input type
 
 
+def edit_membership_search_form(filter: dict, search_by: str, entity: model.Entity):
+    options = {
+        'student': 'Student (edit student\'s club(s))',
+        'club': 'Club (edit club\'s members)',
+    }
+    options = {
+        search_by: options.pop(search_by),
+        **options,
+    }
+
+    search_by_form = html.RecordForm(action='', method='get')
+    search_by_form.dropdown_input('Search By', 'search_by', options)
+    search_by_form.submit_input('👈 Choose')
+
+    form = html.RecordForm(action='', method='get')
+    form.hidden_input('search_by', search_by)
+    # form = filter_to_form(filter, ENTITIES[search_by], form)
+    form = filter_to_form(filter, entity, form)
+    form = search_by_form.html() + form.html()
+    return form
+
+
+
 def entity_to_header_types(entity: model.Entity) -> Dict[str, str]:
     """
     Get the input types of the fields of the `entity`.
@@ -201,7 +224,12 @@ class InvalidPostDataError(Exception):
     pass
 
 
-RecordDeltas = List[Dict[str, Any]]
+class RecordDelta(TypedDict):
+    method: str
+    new: dict[str, Any]
+    old: dict[str, Any]
+
+RecordDeltas = List[RecordDelta]
 """
 The list of record changes in the format:
 ```json

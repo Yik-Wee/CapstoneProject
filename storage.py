@@ -46,28 +46,6 @@ class Clubs(Collection):
     pass
 
 
-class ClubMembers(Collection):
-    def find(self, filter):
-        return [  # TESTING CODE
-            {
-                'name': 'STUDENT 1',
-                'age': '200',
-                'year_enrolled': '1997',
-                'graduating_year': '2008',
-                'role': 'member',
-            },
-            {
-                'name': 'STUDENT 2',
-                'age': '18',
-                'year_enrolled': '2021',
-                'graduating_year': '2023',
-                'role': 'president',
-            },
-        ]
-        pass
-    pass
-
-
 class Activities(Collection):
     def find(self, filter):
         return [  # TESTING CODE
@@ -85,41 +63,41 @@ class Classes(Collection):
     pass
 
 
-class Membership(Collection):
-    def find(self, filter):
-        return [  # TESTING CODE
-            {
-                'name': 'Simp',
-                'role': 'member',
-            },
-            {
-                'name': 'Obama',
-                'role': 'president',
-            },
-        ]
-        pass
-
-
-class ActivityParticipants(Collection):
-    def find(self, filter):
-        return [  # TESTING CODE
-            {
-                'name': 'Simp',
-                'category': 'Achievement',
-                'role': 'participant',
-                'award': '',
-                'hours': 4,
-            },
-            {
-                'name': 'Obama',
-                'category': 'Enrichment',
-                'role': 'leader',
-                'award': 'epic chad award',
-                'hours': 9000,
-            }
-        ]
-
+class Subjects(Collection):
     pass
+
+
+class Membership(Collection):
+    # ! TESTING CODE DO NOT ACTUALLY USE !
+    def find(self, search_by: str, filter: dict):
+        obama = {
+            'student_name': 'OBAMA',
+            'age': 69,
+            'year_enrolled': 2008,
+            'graduating_year': 2016,
+
+            'club_name': 'HAPPY FUN CLUB',
+
+            'role': 'POG MAN',
+        }
+
+        joe = {
+            'student_name': 'biden',
+            'age': 80,
+            'year_enrolled': 2020,
+            'graduating_year': 2024,
+
+            'club_name': 'n club',
+
+            'role': 'joe',
+        }
+
+        if filter.get('name') == 'OBAMA':
+            return [obama]
+        elif filter.get('name') == 'biden':
+            return [joe]
+        else:
+            return [joe, obama]
 
 
 class Participation(Collection):
@@ -141,4 +119,9 @@ class Participation(Collection):
             }
         ]
 
+    pass
+
+
+class StudentSubject(Collection):
+    """Probably the most unimportant table in capstone project"""
     pass

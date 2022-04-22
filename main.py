@@ -6,22 +6,32 @@ from flask import Flask, render_template, request
 import convert
 import data
 import myhtml as html
-from model import Activity, ActivityParticipant, Class, Club, Entity, ClubMember, Student
-from storage import Activities, ActivityParticipants, Classes, ClubMembers, Clubs, Collection, Membership, Participation, Students
+from model import Activity, ParticipationRecord, Class, Club, Entity, MembershipRecord, Student
+from storage import (
+    Activities,
+    Classes,
+    Clubs,
+    Collection,
+    Membership,
+    Participation,
+    StudentSubject,
+    Students,
+    Subjects
+)
 
 app = Flask(__name__)
-# app.url_map.strict_slashes = False
 
 
+# TODO change collection initialisation when storage.py is done (too lazy do now)
 colls: Dict[str, Collection] = {
     'student': Students(key='student_id'),
     'club': Clubs(key='club_id'),
     'class': Classes(key='class_id'),
     'activity': Activities(key='activity_id'),
-    'member': ClubMembers(key='student_id'),
-    'participant': ActivityParticipants(key='student_id'),
+    'subject': Subjects(key='subject_id'),
     'membership': Membership(key=None),
     'participation': Participation(key=None),
+    'student-subject': StudentSubject(key=None),
 }
 
 
@@ -30,8 +40,8 @@ ENTITIES: Dict[str, Entity] = {
     'class': Class,
     'club': Club,
     'activity': Activity,
-    'member': ClubMember,
-    'participant': ActivityParticipant,
+    'membership': MembershipRecord,
+    'participation': ParticipationRecord,
 }
 
 
@@ -164,7 +174,7 @@ DASHBOARD_VIEW_EXISTING_PAGES = ('student', 'class', 'club', 'activity')
 @app.route('/dashboard/view/<page_name>', methods=['GET'])
 @for_existing_pages(DASHBOARD_VIEW_EXISTING_PAGES)
 def view_entity(page_name: str):
-    # entity = entities_view[page_name]
+    # TODO when viewing student, SELECT ... FROM student LEFT JOIN subject ON (...filter)
     entity = ENTITIES[page_name]
     coll = colls[page_name]
 
@@ -191,188 +201,68 @@ def view_entity(page_name: str):
 # edit Membership(Student-Club)/Participation(Student-Activity)
 # ------------------------------
 ACCEPTED_METHODS = ('UPDATE', 'DELETE', 'INSERT')
-DASHBOARD_EDIT_ER: Dict[str, Dict[str, Entity]] = {
-    # search_by: to_edit
-    'membership': {
-        'student': 'club',
-        'club': 'member',
-    },
-    'participation': {
-        'student': 'activity',
-        'activity': 'participant',
-    }
-}
-DASHBOARD_EDIT_DROPDOWN_OPTIONS: Dict[str, Dict[str, str]] = {
-    'membership': {
-        'student': 'Student (edit student\'s club(s))',
-        'club': 'Club (edit club\'s members)',
-    },
-    'participation': {
-        'student': 'Student (edit student\'s club(s))',
-        'activity': 'Activity (edit activity\'s participant(s))'
-    },
-}
+MEMBERSHIP_RELATION = ('student', 'club')
 
 
-@app.route('/dashboard/edit/<page_name>', methods=['GET', 'POST'])
-@for_existing_pages(DASHBOARD_EDIT_ER)
-def edit_relationship(page_name: str):
-    # stuff to edit the Club Membership / Activity Participation
-    table = None
-    form = None
-    relationship = DASHBOARD_EDIT_ER[page_name]
-
-    # e.g. search_by == 'student' -> find all clubs the student is in
-    default_search_by = 'student'
-    to_edit = 'club'
-    search_by = request.args.get('search_by', default_search_by)
-    if search_by not in relationship:
-        search_by = default_search_by
-    to_edit = relationship[search_by]
-
-    search_by_coll = colls[search_by]
-    to_edit_coll = colls[to_edit]
-
+@app.route('/dashboard/edit/membership', methods=['GET', 'POST'])
+def edit_membership():
     if 'confirm' in request.args:
-        return edit_relationship_confirm(page_name)
+        return edit_membership_confirm()
 
-    # get record filter from request params
     filter = request.args.to_dict()
-    print(filter)
-    filter.pop('search_by', None)
+    search_by = filter.pop('search_by', None)
+    if search_by not in MEMBERSHIP_RELATION:
+        search_by = MEMBERSHIP_RELATION[0]
+    coll = colls['membership']
 
     # construct form to search for records to edit which puts filter in get request params (request.args)
-    options = DASHBOARD_EDIT_DROPDOWN_OPTIONS[page_name]
-    options = { search_by: options[search_by], **options }
-
-    search_by_form = html.RecordForm(action='', method='get')
-    search_by_form.dropdown_input('Search By', 'search_by', options)
-    search_by_form.submit_input('👈 Choose')
-
-    form = html.RecordForm(action='', method='get')
-    form.hidden_input('search_by', search_by)
-    form = convert.filter_to_form(filter, ENTITIES[search_by], form)
-    form = search_by_form.html() + form.html()
+    form = convert.edit_membership_search_form(
+        filter, search_by, ENTITIES[search_by])
 
     # find record(s) corresponding to the filter
-    records = search_by_coll.find(filter)
+    # TODO IMPLEMENT ASSUMPTIONS IN storage.py? (ask cassey to do probably)
+    # ! ASSUMING FIND RETURNS EVERYTHING FOR EMPTY FILTER
+    # ! AND "name" FIELDS ARE DIFFERENT ("student_name", "club_name", ...)
+    records_to_edit = coll.find(search_by, filter)
 
-    if len(records) > 1:
-        # more than 1 record -> render selectable table (can select record from table)
-        # e.g. if many students with same name but diff year_enrolled, age, ...
-        table = convert.records_to_selectable_table(records, action='', search_by=search_by)
-        table = '<h3>Choose One</h3>' + table.html()
-    elif len(records) == 1:
-        # exactly 1 (e.g. entity == 'student') record found -> return all clubs the student is in
-        table_found = convert.records_to_table(records)
-        table_found = f'<h3>೭੧(❛▿❛✿)੭೨ Found {search_by}</h3>' + table_found.html()
-
-        records = to_edit_coll.find(filter)
-
-        table_edit = convert.records_to_editable_table(
-            records, action='?confirm', method='post', search_by=search_by, filter=filter)
-        entity_to_edit = ENTITIES[to_edit]
-        header_types = convert.entity_to_header_types(entity=entity_to_edit)
-        table_edit.set_header_types(header_types)
-        table_edit = f'<div class="outline"><h3>✍️ Edit {entity_to_edit.entity}s</h3>{table_edit.html()}</div>'
-
-        table = table_found + table_edit
-    else:  # no records found
-        table = '🦧can\'t find anything'
+    # display table of members of the club, allowing user to edit member records
+    # give user the entire INNER/LEFT JOIN student-club junction table to edit for simplicity
+    table_edit = convert.records_to_editable_table(
+        records_to_edit, action='?confirm', method='post')
+    entity_to_edit = ENTITIES['membership']
+    header_types = convert.entity_to_header_types(entity=entity_to_edit)
+    table_edit.set_header_types(header_types)
+    table_edit = f'<div class="outline"><h3>✍️ Edit {entity_to_edit.entity}s</h3>{table_edit.html()}</div>'
+    table = table_edit
 
     return render_template(
         'dashboard/edit/edit_entity.html',
-        entity=page_name.title(),
+        entity='Membership',
         form=form,
         table=table,
     )
 
 
-def get_filter(post_data: dict, entity: Entity) -> dict:
-    filter = {}
-    for key in post_data:
-        if key.startswith('filter:'):
-            _key = key[7:]
-            filter[_key] = post_data.get(key)[0]
-
-    for key in filter:
-        post_data.pop(f'filter:{key}')
-
-    for field in entity.fields:
-        value = filter.get(field.name)
-        if value == '':
-            filter.pop(field.name)
-        elif value is not None and isinstance(field, data.Number):
-            filter[field.name] = int(value)
-
-    return filter
-
-
-def edit_relationship_confirm(page_name: str, save_changes=False):
-    relationship = DASHBOARD_EDIT_ER[page_name]
+def edit_membership_confirm():
     post_data = request.form.to_dict(flat=False)
-    search_by = post_data.pop('search_by', [None])[0]
-    if search_by is None or search_by not in relationship:
-        return invalid_post_data(f'field `search_by`: `{search_by}` is invalid')
-
-    filter = get_filter(post_data, ENTITIES[search_by])
-    to_edit = relationship[search_by]
-    entity = ENTITIES[to_edit]
-
+    entity = ENTITIES['membership']
     try:
-        records = convert.post_data_to_record_deltas(post_data, ACCEPTED_METHODS, entity)
+        record_deltas = convert.post_data_to_record_deltas(
+            post_data, ACCEPTED_METHODS, entity)
     except convert.InvalidPostDataError as err:
         return invalid_post_data(str(err))
-    
-    headers = list(records[0]['old'].keys())
 
-    if save_changes:  # not confirming anymore, edit database
-        try:
-            table_old, table_new = convert.record_deltas_to_tables(records, entity, headers)
-        except data.ValidationFailedError as err:
-            return render_template('dashboard/edit/failure.html', entity=page_name.title(), error=str(err)), 400
-
-        table_search_by = convert.records_to_table([filter])
-        coll = colls[page_name]
-
-        for rec in records:  # update db to reflect changes
-            method = rec['method']
-            if method == 'DELETE':
-                # coll.delete(filter, rec['old'])
-                coll.delete(rec['old'])
-            elif method == 'UPDATE':
-                # coll.update(filter, rec['old'], rec['new'])
-                coll.update(rec['old'], rec['new'])
-            elif method == 'INSERT':
-                # coll.insert(filter, rec['new'])
-                coll.insert(rec['new'])
-
-        return render_template(
-            'dashboard/edit/success.html',
-            entity=entity.entity,
-            search_by=filter.get('name') or ENTITIES[search_by].entity,
-            to_edit=to_edit,
-            table_search_by=table_search_by.html(),
-            table_old=table_old.html(),
-            table_new=table_new.html()
-        )
+    headers = list(record_deltas[0]['old'].keys())
 
     # confirming changes, display changes in old and new table
     try:
         table_old, table_new = convert.record_deltas_to_submittable_tables(
-            records,
-            entity,
-            headers,
-            action=f'/dashboard/edit/{page_name}/result',
-            method='post',
-            search_by=search_by,
-            filter=filter,
-        )
+            record_deltas, entity, headers, action='/dashboard/edit/membership/result', method='post')
     except data.ValidationFailedError as err:
-        return render_template('dashboard/edit/failure.html', entity=page_name.title(), error=str(err)), 400
+        return render_template('dashboard/edit/failure.html', entity='Membership', error=str(err)), 400
 
     if len(table_new.rows()) == 0:
-        return render_template('dashboard/edit/failure.html', entity=page_name.title(), error='No changes made!'), 400
+        return render_template('dashboard/edit/failure.html', entity='Membership', error='No changes made!'), 400
 
     return render_template(
         'dashboard/edit/edit_entity.html',
@@ -383,9 +273,56 @@ def edit_relationship_confirm(page_name: str, save_changes=False):
     )
 
 
-@app.route('/dashboard/edit/<page_name>/result', methods=['POST'])
-def edit_relationship_result(page_name: str):
-    return edit_relationship_confirm(page_name, save_changes=True)
+@app.route('/dashboard/edit/membership/result', methods=['POST'])
+def edit_membership_result():
+    post_data = request.form.to_dict(flat=False)
+    entity = ENTITIES['membership']
+    try:
+        record_deltas = convert.post_data_to_record_deltas(
+            post_data, ACCEPTED_METHODS, entity)
+    except convert.InvalidPostDataError as err:
+        return invalid_post_data(str(err))
+
+    headers = list(record_deltas[0]['old'].keys())
+
+    try:  # html table conversion includes data validation
+        table_old, table_new = convert.record_deltas_to_tables(
+            record_deltas, entity, headers)
+    except data.ValidationFailedError as err:
+        return render_template('dashboard/edit/failure.html', entity='Membership', error=str(err)), 400
+
+    coll = colls['membership']
+
+    for rec_delta in record_deltas:  # save changes to db
+        method = rec_delta['method']
+        old_rec = rec_delta['old']
+        new_rec = rec_delta['new']
+
+        # TODO impl junction table colls in storage.py (do outline for cassey + docstrings with below expl)
+        # the junction table coll should find the student_id and club_id from the old/new rec
+        # e.g. old_rec = { 'student_name': 'OBAMA', ..., 'club_name': 'POG CLUB', ..., 'role': 'president' }
+        #      then it should detect: student_id = 6, club_id = 9
+        #      if method == 'DELETE', it should execute:
+        #      DELETE FROM membership
+        #      WHERE
+        #          student_id = 6 AND
+        #          club_id = 9 AND
+        #          role = 'president';
+
+        # TODO handle sqlite3 exceptions (?)
+        if method == 'INSERT':
+            coll.insert(new_rec)
+        elif method == 'UPDATE':
+            coll.update(old_rec, new_rec)
+        elif method == 'DELETE':
+            coll.delete(old_rec)
+
+    return render_template(
+        'dashboard/edit/success.html',
+        entity='Membership',
+        table_old=table_old.html(),
+        table_new=table_new.html()
+    )
 
 
 @app.route('/login')
@@ -405,7 +342,7 @@ def admin():
 
 if __name__ == '__main__':
     # for production server:
-    app.run('0.0.0.0')
+    # app.run('0.0.0.0')
 
     # for dev server:
-    #app.run('localhost', port=3000, debug=True)
+    app.run('localhost', port=3000, debug=True)

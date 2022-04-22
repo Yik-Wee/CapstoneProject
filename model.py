@@ -58,7 +58,7 @@ class Student(Entity):
     """
     entity = 'Student'
     fields = [
-        String('name', 'Name (as in NRIC)'),
+        String('student_name', 'Name (as in NRIC)'),
         Number('age', 'Age'),
         Year('year_enrolled', 'Year Enrolled'),
         Year('graduating_year', 'Graduating Year'),
@@ -73,7 +73,7 @@ class Class(Entity):
     """
     entity = 'Class'
     fields = [
-        String('name', 'Name'),
+        String('class_name', 'Name'),
         String('level', 'Level'),  # {JC1, JC2}
     ]
 
@@ -85,7 +85,7 @@ class Club(Entity):
     """
     entity = 'Club'
     fields = [
-        String('name', 'Name of club'),
+        String('club_name', 'Name of club'),
     ]
 
 
@@ -98,18 +98,22 @@ class Activity(Entity):
     ]
 
 
-class ClubMember(Entity):
+class MembershipRecord(Entity):
     entity = 'Member'
     fields = [
-        String('name', 'Name (as in NRIC)'),
+        *Student.fields,
+        *Club.fields,
+        # String('name', 'Name (as in NRIC)'),
         String('role', 'Role'),  # default 'member'
     ]
 
 
-class ActivityParticipant(Entity):
+class ParticipationRecord(Entity):
     entity = 'Participant'
     fields = [
-        String('name', 'Name (as in NRIC)'),
+        *Student.fields,
+        *Activity.fields,
+        # String('name', 'Name (as in NRIC)'),
         String('category', 'Category'),  # {Achievement, Enrichment, Leadership, Service}
         String('role', 'Role'),  # default 'participant'
         String('award', 'Award'),  # optional
