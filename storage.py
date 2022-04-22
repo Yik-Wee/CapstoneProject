@@ -9,7 +9,6 @@ HALPPP
 """
 import sqlite3
 
-
 class Collection:
     """
     Storage base class to interface with the db
@@ -44,6 +43,7 @@ class Collection:
         pass
     
     def insert(self, record: dict) -> None:
+        
         """
         Insert a record into the db.
         Record DOES NOT need to include the primary key if it is auto-incremented.
@@ -89,16 +89,15 @@ class Collection:
 
 
 class Students(Collection):
-    # PLEASE BE CONSISTENT IS IT student_id OR id ?????????
-    # WHERE IS class_id YOU WROTE IT IN THE DATA SCHEMA AND ITS NOT HERE
-
+    column_names = ['id', 'name', 'age', 'year_enrolled', 'graduating_year', 'class_id']
+    
     def __init__(self, db_path):
         self.db_path = db_path
-        self.column_names = ['student_id', 'name', 'age', 'year_enrolled', 'graduating_year', 'class_id']
+        # self.column_names = ['id', 'name', 'age', 'year_enrolled', 'graduating_year', 'class_id']
         with sqlite3.connect(self.db_path) as conn:
             c = conn.cursor()
             c.execute("""CREATE TABLE IF NOT EXISTS student(
-                    student_id INTEGER, 
+                    id INTEGER, 
                     name TEXT,
                     age INTEGER,
                     year_enrolled INTEGER,
@@ -116,26 +115,28 @@ class Students(Collection):
 
     def execute(self, sql, values={}):
         with sqlite3.connect(self.db_path) as conn:
-            conn.row_factory = sqlite3.Row
+            conn.row_factory = sqlite3.Row  # make returned stuff from c.fetch a dict insteadof tuple
             c = conn.cursor()
             c.execute(sql, values)
             results = c.fetchall()
             conn.commit()
             # conn.close() is automatic
-            
+
+            # results is empty (e.g. if doing SELECT ... and nothing found, [] returned or () idk)
             if results == []:
                 return []
-            else:
-                actually_dict = []
-                for record in results:
+            else:  # not empty, something returned
+                # cant you just use map(dict, results)
+                # like return list(map(dict, results)) 
+                actually_dict = []  # initialise list of dicts
+                for record in results:  # convert each sqlite3.Row in the results to a dict
                     actually_dict.append(dict(record))
                 return actually_dict
 
     def insert(self, record: dict) -> None:
+
         # TODO allow omission of `id` from record.
         self.execute("""INSERT INTO student VALUES (?, ?, ?, ?, ?, ?)""", list(record.values()))
-
-            
 
     def find(self, filter: dict) -> dict:
         """
@@ -146,16 +147,18 @@ class Students(Collection):
         self.check_column(filter)
 
         conditions = filter.keys()
-        values = filter.values()
+        values = filter.values() 
         sql = ''
 
         for condition in conditions:
-            sql += f"{condition} = ? AND "
+            sql += f"{condition} = ? AND " #for the WHERE part 
 
         sql = sql[:-4] #remove the final AND
+        
         sql = f"""SELECT * 
                   FROM student
                   WHERE {sql} """
+        
         return self.execute(sql, list(values))
 
     def update(self, filter, new_record) -> None:
@@ -171,7 +174,7 @@ class Students(Collection):
         for key in keys:
             new_sql += f"{key} = ?, "
 
-        new_sql = new_sql[:-2] #remove the final ','
+        new_sql = new_sql[:-2] #remove the final ', '
 
         #sql for the WHERE part
         conditions = filter.keys()
@@ -182,10 +185,31 @@ class Students(Collection):
             sql += f"{condition} = ? AND "
 
         sql = sql[:-4] #remove the final AND
+        
         both = list(new_values) + list(values)
+        """
+        execute("UPDATE student 
+            SET 
+                a = ?,
+                b = ?
+            WHERE
+                c = ?,
+                d = ?
+        ", (1, 2, 3, 4))
+        become
+        UPDATE student
+        SET
+            a = 1,
+            b = 2
+        WHERE
+            c = 3,
+            d = 4
+        """
+        
         sql = f"""UPDATE student 
                   SET {new_sql}
                   WHERE {sql} """
+        
         return self.execute(sql, list(both))
 
     def delete(self, filter):
@@ -200,6 +224,7 @@ class Students(Collection):
             sql += f"{condition} = ? AND "
         
         sql = sql[:-5] #remove the final AND 
+        
         self.execute(f"""DELETE FROM student WHERE {sql}""", list(values))
             
 
@@ -261,4 +286,3 @@ if __name__ == '__main__':
     for student in found:
         print(dict(student))
         print(student['name'])
-
