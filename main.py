@@ -6,7 +6,15 @@ from flask import Flask, render_template, request
 import convert
 import data
 import myhtml as html
-from model import Activity, ParticipationRecord, Class, Club, Entity, MembershipRecord, Student
+from model import (
+    Activity,
+    ParticipationRecord,
+    Class,
+    Club,
+    Entity,
+    MembershipRecord,
+    Student
+)
 from storage import (
     Activities,
     Classes,
@@ -65,7 +73,7 @@ def invalid_post_data(e):
 
 
 def for_existing_pages(pages: Iterable):
-    """Decorator to accept generic flask routes for specific page names - `pages`"""
+    """Decorator to accept generic flask routes for specific page names"""
     def decorator(callback: Callable):
         @wraps(callback)
         def wrapper(page_name: str):
@@ -215,7 +223,8 @@ def edit_membership():
         search_by = MEMBERSHIP_RELATION[0]
     coll = colls['membership']
 
-    # construct form to search for records to edit which puts filter in get request params (request.args)
+    # construct form to search for records to edit which puts filter in get
+    # request params (request.args)
     form = convert.edit_membership_search_form(
         filter, search_by, ENTITIES[search_by])
 
@@ -225,14 +234,17 @@ def edit_membership():
     # ! AND "name" FIELDS ARE DIFFERENT ("student_name", "club_name", ...)
     records_to_edit = coll.find(search_by, filter)
 
-    # display table of members of the club, allowing user to edit member records
-    # give user the entire INNER/LEFT JOIN student-club junction table to edit for simplicity
+    # display table of members of the club. gives user the entire
+    # INNER/LEFT JOIN student-club junction table to edit for simplicity
     table_edit = convert.records_to_editable_table(
         records_to_edit, action='?confirm', method='post')
     entity_to_edit = ENTITIES['membership']
     header_types = convert.entity_to_header_types(entity=entity_to_edit)
     table_edit.set_header_types(header_types)
-    table_edit = f'<div class="outline"><h3>✍️ Edit {entity_to_edit.entity}s</h3>{table_edit.html()}</div>'
+    table_edit = f'''<div class="outline">
+        <h3>✍️ Edit {entity_to_edit.entity}s</h3>
+        {table_edit.html()}
+    </div>'''
     table = table_edit
 
     return render_template(
