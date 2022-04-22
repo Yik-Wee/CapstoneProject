@@ -4,6 +4,17 @@
 View {{ entity }}
 {% endblock %}
 
+{% block css%}
+<style>
+    h1 {
+        position: center
+    }
+    filters {
+        position: center
+    }
+</style>
+{% endblock %}
+
 {% block body %}
 <h1>View {{ entity }}</h1>
 <div id="filters">
