@@ -15,12 +15,22 @@
     </title>
 </head>
 <body>
+    <div class="background">
     {% block body %}
     {{ body }}
     {% endblock %}
 
-    <hr>
+<!--     <hr>
     <a href="/">🏠Home</a>
-    <a href="javascript:history.back()">&larr; Back</a>
+    <a href="javascript:history.back()">&larr; Back</a> -->
+    </div>
+    
+    <div class="topnav">
+        <a class='active' href="/">🏠Home</a>
+        <a class="item" href="/dashboard/add">Add</a>
+        <a href="/dashboard/view">View</a>
+        <a href="/dashboard/edit">Edit</a>
+        <a href="javascript:history.back()">&larr; Back</a>
+    </div>
 </body>
 </html>

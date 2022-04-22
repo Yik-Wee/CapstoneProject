@@ -1,11 +1,44 @@
 {% extends "styled.html" %}
 
+{% block css %}
+<style>
+    :root {
+        color: white;
+    }
+
+    a {
+        color: inherit;
+        position: relative;
+        top: 90%;
+        left: 5%;
+    }
+    
+    h1 {
+        position: absolute;
+        top:50%;
+        left:50%;
+        transform: translate(-50%,-50%);
+        -ms-transform: translate(-50%,-50%);
+        font-size: 60px;
+    }
+
+    .background {
+        background-image: url("{{ url_for('static', filename='image/bckimg.jpg') }}");
+        background-size: cover;
+        background-position: center;
+        height: 100vh;
+        width: 100vw;
+/*         position: absolute; */
+    }
+</style>
+{% endblock %}
+
 {% block title %}
 Splash page
 {% endblock %}
 
 {% block body %}
-<h1>Yes</h1>
+<h1>Welcome</h1>
 <a href="/dashboard"><i>Dashboard</i></a><br>
 <a href="/login"><i>Login</i></a>
 {% endblock %}
