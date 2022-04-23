@@ -120,15 +120,15 @@ DASHBOARD_ADD_EXISTING_PAGES = ('club', 'activity')
 def add_entity(page_name: str):
     confirm = False
     table = None
-    _Entity = ENTITIES[page_name]
+    _entity = ENTITIES[page_name]
 
     if 'confirm' in request.args:
         try:
-            entity = _Entity.from_dict(request.form.to_dict())
+            entity = _entity.from_dict(request.form.to_dict())
         except data.ValidationFailedError as err:
             return render_template(
                 'dashboard/add/failure.html',
-                entity=_Entity.entity,
+                entity=_entity.entity,
                 error=str(err),
             ), 400
         else:
@@ -139,11 +139,11 @@ def add_entity(page_name: str):
             confirm = True
     else:
         form = html.RecordForm(f'/dashboard/add/{page_name}?confirm', 'post')
-        form = convert.entity_to_new_form(_Entity, form)
+        form = convert.entity_to_new_form(_entity, form)
 
     return render_template(
         'dashboard/add/add_entity.html',
-        entity=_Entity.entity,
+        entity=_entity.entity,
         form=form.html(),
         table=table.html() if table else '',
         confirm=confirm,
@@ -210,54 +210,65 @@ def view_entity(page_name: str):
 # ------------------------------
 ACCEPTED_METHODS = ('UPDATE', 'DELETE', 'INSERT')
 MEMBERSHIP_RELATION = ('student', 'club')
+PARTICIPATION_RELATION = ('student', 'activity')
 
 
-@app.route('/dashboard/edit/membership', methods=['GET', 'POST'])
-def edit_membership():
+@app.route('/dashboard/edit/<page_name>', methods=['GET', 'POST'])
+@for_existing_pages(('membership', 'participation'))
+def edit_relationship(page_name: str):
     if 'confirm' in request.args:
-        return edit_membership_confirm()
+        return edit_relationship_confirm(page_name)
 
-    filter = request.args.to_dict()
-    search_by = filter.pop('search_by', None)
-    if search_by not in MEMBERSHIP_RELATION:
-        search_by = MEMBERSHIP_RELATION[0]
-    coll = colls['membership']
+    relation = ()
+    if page_name == 'membership':
+        relation = MEMBERSHIP_RELATION
+    else:  # participation
+        relation = PARTICIPATION_RELATION
+
+    record_filter = request.args.to_dict()
+    search_by = record_filter.pop('search_by', None)
+    if search_by not in relation:
+        search_by = relation[0]
+    coll = colls[page_name]  # e.g. membership coll for /membership
 
     # construct form to search for records to edit which puts filter in get
     # request params (request.args)
     form = convert.edit_membership_search_form(
-        filter, search_by, ENTITIES[search_by])
+        record_filter, search_by, ENTITIES[search_by])
 
     # find record(s) corresponding to the filter
     # TODO IMPLEMENT ASSUMPTIONS IN storage.py? (ask cassey to do probably)
     # ! ASSUMING FIND RETURNS EVERYTHING FOR EMPTY FILTER
     # ! AND "name" FIELDS ARE DIFFERENT ("student_name", "club_name", ...)
-    records_to_edit = coll.find(search_by, filter)
-
-    # display table of members of the club. gives user the entire
-    # INNER/LEFT JOIN student-club junction table to edit for simplicity
-    table_edit = convert.records_to_editable_table(
-        records_to_edit, action='?confirm', method='post')
-    entity_to_edit = ENTITIES['membership']
-    header_types = convert.entity_to_header_types(entity=entity_to_edit)
-    table_edit.set_header_types(header_types)
-    table_edit = f'''<div class="outline">
-        <h3>✍️ Edit {entity_to_edit.entity}s</h3>
-        {table_edit.html()}
-    </div>'''
-    table = table_edit
+    # TODO handle error when filter has invalid keys
+    records_to_edit = coll.find(record_filter)  # record_filter specifies JOIN ON condition
+    if len(records_to_edit) == 0:
+        table = '<div class="outline">🦧 Found nothing</div>'
+    else:
+        # display table of members of the club. gives user the entire
+        # INNER/LEFT JOIN student-club junction table to edit for simplicity
+        table = convert.records_to_editable_table(
+            records_to_edit, action='?confirm', method='post')
+        entity = ENTITIES[page_name]  # entity representing the many-to-many relationship
+        header_types = convert.entity_to_header_types(entity=entity)
+        table.set_header_types(header_types)
+        table = f'''<div class="outline">
+            <h3>✍️ Edit {entity.entity}s</h3>
+            {table.html()}
+        </div>'''
 
     return render_template(
         'dashboard/edit/edit_entity.html',
-        entity='Membership',
+        entity=page_name.title(),
         form=form,
         table=table,
     )
 
 
-def edit_membership_confirm():
+def edit_relationship_confirm(page_name: str):
     post_data = request.form.to_dict(flat=False)
-    entity = ENTITIES['membership']
+    entity = ENTITIES[page_name]
+
     try:
         record_deltas = convert.post_data_to_record_deltas(
             post_data, ACCEPTED_METHODS, entity)
@@ -269,12 +280,12 @@ def edit_membership_confirm():
     # confirming changes, display changes in old and new table
     try:
         table_old, table_new = convert.record_deltas_to_submittable_tables(
-            record_deltas, entity, headers, action='/dashboard/edit/membership/result', method='post')
+            record_deltas, entity, headers, action=f'/dashboard/edit/{page_name}/result', method='post')
     except data.ValidationFailedError as err:
-        return render_template('dashboard/edit/failure.html', entity='Membership', error=str(err)), 400
+        return render_template('dashboard/edit/failure.html', entity=page_name.title(), error=str(err)), 400
 
     if len(table_new.rows()) == 0:
-        return render_template('dashboard/edit/failure.html', entity='Membership', error='No changes made!'), 400
+        return render_template('dashboard/edit/failure.html', entity=page_name.title(), error='No changes made!'), 400
 
     return render_template(
         'dashboard/edit/edit_entity.html',
@@ -285,10 +296,10 @@ def edit_membership_confirm():
     )
 
 
-@app.route('/dashboard/edit/membership/result', methods=['POST'])
-def edit_membership_result():
+@app.route('/dashboard/edit/<page_name>/result', methods=['POST'])
+def edit_relationship_result(page_name: str):
     post_data = request.form.to_dict(flat=False)
-    entity = ENTITIES['membership']
+    entity = ENTITIES[page_name]
     try:
         record_deltas = convert.post_data_to_record_deltas(
             post_data, ACCEPTED_METHODS, entity)
@@ -301,9 +312,9 @@ def edit_membership_result():
         table_old, table_new = convert.record_deltas_to_tables(
             record_deltas, entity, headers)
     except data.ValidationFailedError as err:
-        return render_template('dashboard/edit/failure.html', entity='Membership', error=str(err)), 400
+        return render_template('dashboard/edit/failure.html', entity=page_name.title(), error=str(err)), 400
 
-    coll = colls['membership']
+    coll = colls[page_name]
 
     for rec_delta in record_deltas:  # save changes to db
         method = rec_delta['method']
@@ -331,7 +342,7 @@ def edit_membership_result():
 
     return render_template(
         'dashboard/edit/success.html',
-        entity='Membership',
+        entity=page_name.title(),
         table_old=table_old.html(),
         table_new=table_new.html()
     )

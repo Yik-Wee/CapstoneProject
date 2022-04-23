@@ -1,3 +1,5 @@
+# pylint: disable=redefined-builtin
+
 class Collection:
     def __init__(self, key):
         pass
@@ -25,7 +27,6 @@ class Students(Collection):
                 'graduating_year': 2016,
             }
         ]
-    pass
 
 
 class Clubs(Collection):
@@ -41,9 +42,6 @@ class Clubs(Collection):
                 'name': 'ILLEGAL SUBSTANCE ABUSE CLUB',
             },
         ]
-        pass
-
-    pass
 
 
 class Activities(Collection):
@@ -56,8 +54,6 @@ class Activities(Collection):
             }
         ]
 
-    pass
-
 
 class Classes(Collection):
     pass
@@ -69,7 +65,7 @@ class Subjects(Collection):
 
 class Membership(Collection):
     # ! TESTING CODE DO NOT ACTUALLY USE !
-    def find(self, search_by: str, filter: dict):
+    def find(self, filter: dict):
         obama = {
             'student_name': 'OBAMA',
             'age': 69,
@@ -94,34 +90,47 @@ class Membership(Collection):
 
         if filter.get('name') == 'OBAMA':
             return [obama]
-        elif filter.get('name') == 'biden':
+        if filter.get('name') == 'biden':
             return [joe]
-        else:
-            return [joe, obama]
+        # else:
+        return [joe, obama]
 
 
 class Participation(Collection):
     def find(self, filter):
-        return [  # TESTING CODE
+        return [
             {
-                'name': 'Simp',
+                'student_name': 'joe',
+                'age': 1000,
+                'year_enrolled': 2020,
+                'graduating_year': 2024,
+
+                'description': 'white house party',
+                'start_date': '2022-01-01',
+                'end_date': '2022-01-02',
+
                 'category': 'Achievement',
                 'role': 'participant',
                 'award': '',
                 'hours': 4,
             },
             {
-                'name': 'Obama',
+                'student_name': 'OBAMA',
+                'age': 69,
+                'year_enrolled': 2008,
+                'graduating_year': 2016,
+
+                'description': 'white house party',
+                'start_date': '2008-01-01',
+                'end_date': '2016-01-02',
+
                 'category': 'Enrichment',
                 'role': 'leader',
                 'award': 'epic chad award',
                 'hours': 9000,
-            }
+            },
         ]
-
-    pass
 
 
 class StudentSubject(Collection):
     """Probably the most unimportant table in capstone project"""
-    pass

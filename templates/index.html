@@ -9,13 +9,14 @@
     a {
         color: inherit;
         position: relative;
-        top: 90%;
-        left: 5%;
+        /* top: 90%; */
+        /* left: 5%; */
     }
     
     h1 {
         position: absolute;
-        top:50%;
+        /* top:50%; */
+        top: calc(50% - var(--navbar-height));
         left:50%;
         transform: translate(-50%,-50%);
         -ms-transform: translate(-50%,-50%);
@@ -26,9 +27,11 @@
         background-image: url("{{ url_for('static', filename='image/bckimg.jpg') }}");
         background-size: cover;
         background-position: center;
-        height: 100vh;
-        width: 100vw;
-/*         position: absolute; */
+        /* height: 100vh; */
+        height: calc(100% - var(--navbar-height));
+        /* width: 100vw; */
+        width: 100%;
+        position: absolute;
     }
 </style>
 {% endblock %}

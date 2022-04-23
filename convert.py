@@ -7,6 +7,7 @@ import myhtml as html
 # ------------------------------
 # Functions to convert data to html
 # ------------------------------
+# pylint: disable=redefined-builtin,pointless-string-statement
 
 
 def __add_input_by_field(
@@ -298,14 +299,14 @@ def post_data_to_record_deltas(
     """
 
     methods = post_data.get("method", [])
-    records = []
+    record_deltas: RecordDeltas = []
 
     for method in methods:
         if method not in accepted_methods:
             raise InvalidPostDataError(
                 'field `method` must be string literal "UPDATE" or "DELETE" 🤡')
 
-        records.append({
+        record_deltas.append({
             "old": {},
             "new": {},
             "method": method,
@@ -313,23 +314,24 @@ def post_data_to_record_deltas(
 
     for key in post_data:
         values = post_data.get(key)
-        if len(values) != len(records):
+        if len(values) != len(record_deltas):
             raise InvalidPostDataError(
                 f'Inconsistent number of records 🤡. \
-                length `{values}` != length `{records}`')
+                length `{values}` != length `{record_deltas}`')
 
         _key = key[4:]
         for idx, value in enumerate(values):
             if key.startswith('old:'):
-                records[idx]['old'][_key] = value
+                record_deltas[idx]['old'][_key] = value
             elif key.startswith('new:'):
-                records[idx]['new'][_key] = value
+                record_deltas[idx]['new'][_key] = value
 
     # 💀 its 10:07 PM and im tired pls help :(
     for field in entity.fields:
-        for rec_data in records:
-            value_old = rec_data['old'].get(field.name)
-            value_new = rec_data['new'].get(field.name)
+        for rec_delta in record_deltas:
+            value_old = rec_delta['old'].get(field.name)
+            value_new = rec_delta['new'].get(field.name)
+            method = rec_delta['method']
 
             if isinstance(field, data.Number):
                 # numeric values submitted in post_data must be valid numbers
@@ -342,11 +344,11 @@ def post_data_to_record_deltas(
                         f'field `{field.name}`: `{value_new}` \
                         is not a number.')
 
-                if rec_data['method'] != 'INSERT':
-                    rec_data['old'][field.name] = int(value_old)
-                rec_data['new'][field.name] = int(value_new)
+                if rec_delta['method'] != 'INSERT':
+                    rec_delta['old'][field.name] = int(value_old)
+                rec_delta['new'][field.name] = int(value_new)
 
-    return records
+    return record_deltas
 
 
 def record_deltas_to_submittable_tables(
