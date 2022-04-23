@@ -6,11 +6,13 @@ Success!
 
 {% block body %}
 <h1>Successfully edited {{ entity }}!</h1>
-<h2>Successfully edited {{ search_by }}'s {{ to_edit }}(s)!</h2>
-<h3>{{ search_by }}'s details</h3>
-{{ table_search_by|safe }}
-<h3>Old {{ to_edit }}(s)</h3>
+<!-- <h2>Successfully edited {{ search_by }}'s {{ to_edit }}(s)!</h2> -->
+<!-- <h3>{{ search_by }}'s details</h3> -->
+<!-- {{ table_search_by|safe }} -->
+<!-- <h3>Old {{ to_edit }}(s)</h3> -->
+<h3>Old {{ entity }} Records</h3>
 {{ table_old|safe }}
-<h3>New {{ to_edit }}(s)</h3>
+<!-- <h3>New {{ to_edit }}(s)</h3> -->
+<h3>New {{ entity }} Records</h3>
 {{ table_new|safe }}
 {% endblock %}

@@ -272,37 +272,6 @@ class RecordTableForm(RecordTable):
         return html
 
 
-class SelectableRecordTable(RecordTableForm):
-    """
-    Display an html RecordTable that allows the user to click & choose a row/record
-    which redirects them to `self.action()` with the method `self.method()`, with the
-    record as the request parameters.
-    """
-
-    def html(self) -> str:
-        html = '<table>'
-        html += self._gen_headers_html()
-        for row in self.rows():
-            html += '<tr>'
-            html += f'<form action="{self.action()}" method="{self.method()}">'
-            for idx, item in enumerate(row):
-                header = self.headers[idx]
-                html += f'''<td>
-                    {table_input(type="hidden", name=header, value=item)}
-                    {item}
-                    </td>'''
-            html += '<td>'
-            html += table_input(type="submit", value="🤏 Choose Record")
-            if self.search_by() is not None:
-                html += table_input(type="hidden", name="search_by", value=self.search_by())
-            html += '</td>'
-            html += '</form>'
-            html += '</tr>'
-        html += '</table>'
-
-        return html
-
-
 class EditableRecordTable(RecordTableForm):
     """
     Display an html RecordTable with the ability to edit each rows/record's fields.
@@ -352,10 +321,22 @@ class EditableRecordTable(RecordTableForm):
             for idx, item in enumerate(row):
                 header = self.headers[idx]
                 header_type = self.__header_types[header]
-                html += f'''<td>
-                    {table_input(type="hidden", name="old:"+header, value=item, form=self.form_id)}
-                    {table_input(type=header_type, name="new:"+header, value=item, form=self.form_id)}
-                    </td>'''
+                if isinstance(header_type, (list, tuple)):  # is dropdown, returned value is constraints
+                    constraints = header_type.copy()
+                    html += '<td>'
+                    html += table_input(type="hidden", name="old:"+header, value=item, form=self.form_id)
+                    html += f'<select name="new:{header}" form="{self.form_id}">'
+                    html += f'<option value="{item}">{item}</option>'
+                    constraints.remove(item)
+                    for option in constraints:
+                        html += f'<option value="{option}">{option}</option>'
+                    html += '</select>'
+                    html += '</td>'
+                else:  # not dropdown, just regular input
+                    html += f'''<td>
+                        {table_input(type="hidden", name="old:"+header, value=item, form=self.form_id)}
+                        {table_input(type=header_type, name="new:"+header, value=item, form=self.form_id)}
+                        </td>'''
             html += f'''<td>
                 <select id="method" name="method" form="{self.form_id}">
                     <option value="UPDATE">Update</option>

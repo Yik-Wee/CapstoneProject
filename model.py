@@ -1,5 +1,5 @@
 from typing import List
-from data import Field, Number, ValidationFailedError, String, Date, Year
+from data import ConstrainedString, Field, Number, OptionalDate, OptionalNumber, OptionalString, ValidationFailedError, String, Date, Year
 
 
 class Entity:
@@ -58,7 +58,7 @@ class Student(Entity):
     """
     entity = 'Student'
     fields = [
-        String('name', 'Name (as in NRIC)'),
+        String('student_name', 'Name (as in NRIC)'),
         Number('age', 'Age'),
         Year('year_enrolled', 'Year Enrolled'),
         Year('graduating_year', 'Graduating Year'),
@@ -73,8 +73,8 @@ class Class(Entity):
     """
     entity = 'Class'
     fields = [
-        String('name', 'Name'),
-        String('level', 'Level'),  # {JC1, JC2}
+        String('class_name', 'Name'),
+        ConstrainedString('level', 'Level', constraints=['JC1', 'JC2']),  # {JC1, JC2}
     ]
 
 
@@ -85,7 +85,7 @@ class Club(Entity):
     """
     entity = 'Club'
     fields = [
-        String('name', 'Name of club'),
+        String('club_name', 'Name of club'),
     ]
 
 
@@ -93,25 +93,31 @@ class Activity(Entity):
     entity = 'Activity'
     fields = [
         Date('start_date', 'Start Date'),
-        Date('end_date', 'End Date'),  # optional
+        OptionalDate('end_date', 'End Date'),  # optional
         String('description', 'Description'),
     ]
 
 
-class ClubMember(Entity):
+class MembershipRecord(Entity):
     entity = 'Member'
     fields = [
-        String('name', 'Name (as in NRIC)'),
+        *Student.fields,
+        *Club.fields,
         String('role', 'Role'),  # default 'member'
     ]
 
 
-class ActivityParticipant(Entity):
+class ParticipationRecord(Entity):
     entity = 'Participant'
     fields = [
-        String('name', 'Name (as in NRIC)'),
-        String('category', 'Category'),  # {Achievement, Enrichment, Leadership, Service}
+        *Student.fields,
+        *Activity.fields,
+        ConstrainedString(
+            'category',
+            'Category',
+            constraints=['Achievement', 'Enrichment', 'Leadership', 'Service']
+        ),  # {Achievement, Enrichment, Leadership, Service}
         String('role', 'Role'),  # default 'participant'
-        String('award', 'Award'),  # optional
-        Number('hours', 'Hours'),  # optional
+        OptionalString('award', 'Award'),  # optional
+        OptionalNumber('hours', 'Hours'),  # optional
     ]

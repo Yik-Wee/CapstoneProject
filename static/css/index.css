@@ -16,9 +16,11 @@ h1 {
 
 :root {
     font-family: dankmono;
+    --navbar-height: 50px;
 }
 
 body {
+    padding-top: var(--navbar-height);
     margin: 0;
 }
 
@@ -80,12 +82,18 @@ tr.tr-insert {
     padding: 1ch;
     margin: 2px;
     margin-top: 0;
+    max-height: 550px;
+    overflow-x: auto;
+    overflow-y: auto;
+    margin: 2ch;
 }
 
 .topnav {
-    width: 100vw;
+    height: var(--navbar-height);
+    /* width: 100vw; */
+    width: 100%;
     z-index: 99;
-    position: absolute;
+    position: fixed;
     top: 0;
     background-color: #333;
     overflow: hidden;
