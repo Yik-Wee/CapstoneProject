@@ -1,4 +1,4 @@
-from typing import Any, Dict, Iterable, List, Tuple, TypedDict
+from typing import Any, Dict, Iterable, List, Tuple, TypedDict, Union
 import data
 import model
 import myhtml as html
@@ -7,7 +7,6 @@ import myhtml as html
 # ------------------------------
 # Functions to convert data to html
 # ------------------------------
-# pylint: disable=redefined-builtin,pointless-string-statement
 
 
 def __add_input_by_field(
@@ -44,6 +43,18 @@ def entity_to_new_form(
     """
     for field in entity.fields:
         __add_input_by_field(form, field)
+    form.submit_input()
+    return form
+
+
+def entity_to_form_with_values(
+    entity: model.Entity,
+    form: html.RecordForm,
+    values: Dict[str, Any],
+) -> html.RecordForm:
+    for field in entity.fields:
+        value = values.get(field.name, '')
+        __add_input_by_field(form, field, value)
     form.submit_input()
     return form
 
@@ -100,26 +111,6 @@ def records_to_table(records: List[dict]) -> html.RecordTable:
     return table
 
 
-def records_to_selectable_table(
-    records: List[dict],
-    **kwargs
-) -> html.SelectableRecordTable:
-    """
-    IMPORTANT
-    ---------
-    Skips data validation. Only use if `records` don't need validation
-    (e.g. `records` are obtained from the database itself)
-
-    ---------
-    Converts `records` to `SelectableRecordTable` using `**kwargs`
-    """
-    headers = list(records[0].keys())
-    table = html.SelectableRecordTable(headers=headers, **kwargs)
-    for record in records:
-        table.add_row(record)
-    return table
-
-
 def records_to_editable_table(
     records: List[dict],
     **kwargs
@@ -141,7 +132,7 @@ def records_to_editable_table(
 
 
 def filter_to_form(
-    filter: dict,
+    record_filter: dict,
     entity: model.Entity,
     form: html.RecordForm
 ) -> html.RecordForm:
@@ -150,7 +141,7 @@ def filter_to_form(
     form. Like `entity_to_hidden_form()` but not hidden & skips validation
     """
     for field in entity.fields:
-        value = filter.get(field.name)
+        value = record_filter.get(field.name)
         __add_input_by_field(form, field, value=value or '')
     form.submit_input()
     return form
@@ -161,7 +152,7 @@ def filter_to_form(
 # ------------------------------
 
 
-def __field_to_input_type(field: data.Field) -> str:
+def __field_to_input_type(field: data.Field) -> Union[str, List[str]]:
     """
     Returns the type of the html input tag based on the `field` instance
     """
@@ -169,37 +160,13 @@ def __field_to_input_type(field: data.Field) -> str:
         return 'date'
     elif isinstance(field, data.Email):
         return 'email'
+    elif isinstance(field, data.ConstrainedString):
+        return field.constraints
     elif isinstance(field, data.String):
         return 'text'
     elif isinstance(field, data.Number):
         return 'number'
     return 'text'  # fallback input type
-
-
-def edit_membership_search_form(
-    filter: dict,
-    search_by: str,
-    entity: model.Entity
-):
-    options = {
-        'student': 'Student (edit student\'s club(s))',
-        'club': 'Club (edit club\'s members)',
-    }
-    options = {
-        search_by: options.pop(search_by),
-        **options,
-    }
-
-    search_by_form = html.RecordForm(action='', method='get')
-    search_by_form.dropdown_input('Search By', 'search_by', options)
-    search_by_form.submit_input('👈 Choose')
-
-    form = html.RecordForm(action='', method='get')
-    form.hidden_input('search_by', search_by)
-    # form = filter_to_form(filter, ENTITIES[search_by], form)
-    form = filter_to_form(filter, entity, form)
-    form = search_by_form.html() + form.html()
-    return form
 
 
 def entity_to_header_types(entity: model.Entity) -> Dict[str, str]:
@@ -333,7 +300,7 @@ def post_data_to_record_deltas(
             value_new = rec_delta['new'].get(field.name)
             method = rec_delta['method']
 
-            if isinstance(field, data.Number):
+            if isinstance(field, data.Number) and not isinstance(field, data.OptionalNumber):
                 # numeric values submitted in post_data must be valid numbers
                 if not value_old.isdecimal() and method != 'INSERT':
                     raise InvalidPostDataError(

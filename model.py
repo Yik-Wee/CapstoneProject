@@ -1,5 +1,5 @@
 from typing import List
-from data import Field, Number, ValidationFailedError, String, Date, Year
+from data import ConstrainedString, Field, Number, OptionalDate, OptionalNumber, OptionalString, ValidationFailedError, String, Date, Year
 
 
 class Entity:
@@ -74,7 +74,7 @@ class Class(Entity):
     entity = 'Class'
     fields = [
         String('class_name', 'Name'),
-        String('level', 'Level'),  # {JC1, JC2}
+        ConstrainedString('level', 'Level', constraints=['JC1', 'JC2']),  # {JC1, JC2}
     ]
 
 
@@ -93,7 +93,7 @@ class Activity(Entity):
     entity = 'Activity'
     fields = [
         Date('start_date', 'Start Date'),
-        Date('end_date', 'End Date'),  # optional
+        OptionalDate('end_date', 'End Date'),  # optional
         String('description', 'Description'),
     ]
 
@@ -103,7 +103,6 @@ class MembershipRecord(Entity):
     fields = [
         *Student.fields,
         *Club.fields,
-        # String('name', 'Name (as in NRIC)'),
         String('role', 'Role'),  # default 'member'
     ]
 
@@ -113,9 +112,12 @@ class ParticipationRecord(Entity):
     fields = [
         *Student.fields,
         *Activity.fields,
-        # String('name', 'Name (as in NRIC)'),
-        String('category', 'Category'),  # {Achievement, Enrichment, Leadership, Service}
+        ConstrainedString(
+            'category',
+            'Category',
+            constraints=['Achievement', 'Enrichment', 'Leadership', 'Service']
+        ),  # {Achievement, Enrichment, Leadership, Service}
         String('role', 'Role'),  # default 'participant'
-        String('award', 'Award'),  # optional
-        Number('hours', 'Hours'),  # optional
+        OptionalString('award', 'Award'),  # optional
+        OptionalNumber('hours', 'Hours'),  # optional
     ]

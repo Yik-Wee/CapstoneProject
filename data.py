@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Any, Callable, List, Optional
 import validate as valid
 
 
@@ -50,6 +50,16 @@ class Number(Field):
         self.__value = None
 
 
+class OptionalNumber(Number):
+    """
+    An optional field of numerical type. See `Number`.
+    """
+
+    @staticmethod
+    def validate(value: Any) -> bool:
+        return value is None or value == '' or valid.number(value)
+
+
 class String(Field):
     """
     A field of string type.
@@ -60,11 +70,36 @@ class String(Field):
     - (optional) validate: function
       Used to validate input values
     """
-    validate: Callable = staticmethod(valid.string)
 
-    def __init__(self, name: str, label: str):
-        self.name = name
-        self.label = label
+    @staticmethod
+    def validate(value: Any) -> bool:
+        return value != '' and valid.string(value)
+
+    # def __init__(self, name: str, label: str):
+    #     self.name = name
+    #     self.label = label
+
+
+class ConstrainedString(String):
+    """
+    A field of string type which takes only certain values specified by `constraints`.
+    """
+
+    def validate(self, value: Any):
+        if self.constraints is None:
+            return True
+        return value in self.constraints
+
+    def __init__(self, name: str, label: str, constraints: Optional[List[str]] = None):
+        super().__init__(name, label)
+        self.constraints = constraints
+
+
+class OptionalString(String):
+    """
+    An optional field of string type. See `String`
+    """
+    validate: Callable = staticmethod(valid.string)
 
 
 class Email(String):
@@ -113,9 +148,19 @@ class Date(String):
     """
     validate: Callable = staticmethod(valid.date)
 
-    def __init__(self, name: str, label: str):
-        self.name = name
-        self.label = label
+    # def __init__(self, name: str, label: str):
+    #     self.name = name
+    #     self.label = label
+
+
+class OptionalDate(Date):
+    """
+    An optional field of date type. See `Date`.
+    """
+
+    @staticmethod
+    def validate(value: str) -> bool:
+        return value == '' or valid.date(value)
 
 
 class Year(Number):

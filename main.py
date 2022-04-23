@@ -153,14 +153,14 @@ def add_entity(page_name: str):
 @app.route('/dashboard/add/<page_name>/result', methods=['POST'])
 @for_existing_pages(DASHBOARD_ADD_EXISTING_PAGES)
 def add_entity_result(page_name: str):
-    _Entity = ENTITIES[page_name]
+    _entity = ENTITIES[page_name]
 
     try:
-        entity = _Entity.from_dict(request.form.to_dict())
+        entity = _entity.from_dict(request.form.to_dict())
     except data.ValidationFailedError as err:
         return render_template(
             'dashboard/add/failure.html',
-            entity=_Entity.entity,
+            entity=_entity.entity,
             error=str(err),
         ), 400
     else:
@@ -186,12 +186,12 @@ def view_entity(page_name: str):
     entity = ENTITIES[page_name]
     coll = colls[page_name]
 
-    filter = request.args.to_dict()
-    records = coll.find(filter)
+    record_filter = request.args.to_dict()
+    records = coll.find(record_filter)
     table = '🦧can\'t find anything'
 
     form = html.RecordForm(f'/dashboard/view/{page_name}')
-    form = convert.filter_to_form(filter, entity, form)
+    form = convert.filter_to_form(record_filter, entity, form)
 
     if records:
         table = convert.records_to_table(records)
@@ -209,8 +209,6 @@ def view_entity(page_name: str):
 # edit Membership(Student-Club)/Participation(Student-Activity)
 # ------------------------------
 ACCEPTED_METHODS = ('UPDATE', 'DELETE', 'INSERT')
-MEMBERSHIP_RELATION = ('student', 'club')
-PARTICIPATION_RELATION = ('student', 'activity')
 
 
 @app.route('/dashboard/edit/<page_name>', methods=['GET', 'POST'])
@@ -219,22 +217,13 @@ def edit_relationship(page_name: str):
     if 'confirm' in request.args:
         return edit_relationship_confirm(page_name)
 
-    relation = ()
-    if page_name == 'membership':
-        relation = MEMBERSHIP_RELATION
-    else:  # participation
-        relation = PARTICIPATION_RELATION
-
-    record_filter = request.args.to_dict()
-    search_by = record_filter.pop('search_by', None)
-    if search_by not in relation:
-        search_by = relation[0]
+    record_filter = request.args.to_dict()  # conditions for left join
     coll = colls[page_name]  # e.g. membership coll for /membership
 
-    # construct form to search for records to edit which puts filter in get
-    # request params (request.args)
-    form = convert.edit_membership_search_form(
-        record_filter, search_by, ENTITIES[search_by])
+    # construct form to search for records
+    entity = ENTITIES[page_name]  # entity representing the many-to-many relationship
+    form = html.RecordForm(action='', method='get')
+    form = convert.entity_to_form_with_values(entity, form, record_filter).html()
 
     # find record(s) corresponding to the filter
     # TODO IMPLEMENT ASSUMPTIONS IN storage.py? (ask cassey to do probably)
@@ -249,7 +238,6 @@ def edit_relationship(page_name: str):
         # INNER/LEFT JOIN student-club junction table to edit for simplicity
         table = convert.records_to_editable_table(
             records_to_edit, action='?confirm', method='post')
-        entity = ENTITIES[page_name]  # entity representing the many-to-many relationship
         header_types = convert.entity_to_header_types(entity=entity)
         table.set_header_types(header_types)
         table = f'''<div class="outline">
@@ -268,7 +256,6 @@ def edit_relationship(page_name: str):
 def edit_relationship_confirm(page_name: str):
     post_data = request.form.to_dict(flat=False)
     entity = ENTITIES[page_name]
-
     try:
         record_deltas = convert.post_data_to_record_deltas(
             post_data, ACCEPTED_METHODS, entity)
