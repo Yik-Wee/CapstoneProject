@@ -86,14 +86,13 @@ class Collection:
         are both accepted as the id for table `club` is AUTOINCREMENT-ed
         """
         # TODO allow omission of `id` from record.
-        q_marks = '('
-        for i in record.values():
-            q_marks += '?, '
-
-        q_marks = q_marks[:-2]
-        q_marks += ')'
         
-        self.execute(f"""INSERT INTO {self.table_name} VALUES {q_marks}""", list(record.values()))
+        q_marks = ''
+        for i in record.values(): #to figure out number of question marks
+            q_marks += '?, '
+        q_marks = q_marks[:-2]
+
+        self.execute(f"""INSERT INTO {self.table_name} VALUES ({q_marks})""", list(record.values()))
 
     def find(self, filter: dict) -> dict:
         """
@@ -114,7 +113,6 @@ class Collection:
 
         for condition in conditions:
             sql += f"{condition} = ? AND " #for the WHERE part 
-
         sql = sql[:-4] #remove the final AND
         
         sql = f"""SELECT * 
@@ -139,7 +137,6 @@ class Collection:
 
         for key in keys:
             new_sql += f"{key} = ?, "
-
         new_sql = new_sql[:-2] #remove the final ', '
 
         #sql for the WHERE part
@@ -151,7 +148,6 @@ class Collection:
             sql += f"{condition} = ? AND "
 
         sql = sql[:-4] #remove the final AND
-        
         both = list(new_values) + list(values)
         
         sql = f"""UPDATE {self.table_name} 
@@ -174,16 +170,13 @@ class Collection:
 
         for condition in conditions: 
             sql += f"{condition} = ? AND "
-        
         sql = sql[:-5] #remove the final AND 
         
         self.execute(f"""DELETE FROM {self.table_name} WHERE {sql}""", list(values))
-        
-        pass
 
 class Students(Collection):
-    column_names = ['id', 'student_name', 'age', 'year_enrolled', 'graduating_year', 'class_id']
     table_name = 'Student'
+    column_names = ['id', 'student_name', 'age', 'year_enrolled', 'graduating_year', 'class_id']
     
     def __init__(self, db_path):
         self.db_path = db_path
@@ -249,12 +242,12 @@ if __name__ == '__main__':
     # print(people.find({'name': 'cassey', 'age': 18}))
 
 
-    # people = Subject('school')
-    # subject1 = {'id': 1, 'subject_name': 'MATH', 'subject_level':'H2'}
-    # people.insert(subject1)
-    # print(people.find({'id': 1}))
-    # people.update({'id':1}, {'subject_level':'H1'})
-    # print(people.find({'id':1}))
+    people = Subject('school')
+    subject1 = {'id': 1, 'subject_name': 'MATH', 'subject_level':'H2'}
+    people.insert(subject1)
+    print(people.find({'id': 1}))
+    people.update({'id':1}, {'subject_level':'H1'})
+    print(people.find({'id':1}))
 
     # people = Clubs('school')
     # club1 = {'id':1, 'club_name':'AV'}
