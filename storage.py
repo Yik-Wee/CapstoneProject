@@ -24,7 +24,13 @@ class Collection:
 
 
 class Students(Collection):
+    column_names = ['student_name', 'age', 'year_enrolled', 'graduating_year']
+
     def find(self, filter):
+        if filter['student_name'] == 'JOE':
+            return [None, None]
+        if filter['student_name'] != 'OBAMA':
+            return []
         return [
             {
                 'id': 6,

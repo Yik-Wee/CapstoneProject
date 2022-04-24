@@ -205,9 +205,6 @@ def edit_relationship(page_name: str):
     form = convert.entity_to_form_with_values(entity, form, record_filter).html()
 
     # find record(s) corresponding to the filter
-    # TODO IMPLEMENT ASSUMPTIONS IN storage.py? (ask cassey to do probably)
-    # ! ASSUMING FIND RETURNS EVERYTHING FOR EMPTY FILTER
-    # ! AND "name" FIELDS ARE DIFFERENT ("student_name", "club_name", ...)
     # TODO handle error when filter has invalid keys
     records_to_edit = coll.find(record_filter)  # record_filter specifies JOIN ON condition
     if len(records_to_edit) == 0:
@@ -245,13 +242,16 @@ def edit_relationship_confirm(page_name: str):
 
     # confirming changes, display changes in old and new table
     try:
+        action = f'/dashboard/edit/{page_name}/result'
         table_old, table_new = convert.record_deltas_to_submittable_tables(
-            record_deltas, entity, headers, action=f'/dashboard/edit/{page_name}/result', method='post')
+            record_deltas, entity, headers, action=action, method='post')
     except data.ValidationFailedError as err:
-        return render_template('dashboard/edit/failure.html', entity=page_name.title(), error=str(err)), 400
+        return render_template(
+            'dashboard/edit/failure.html', entity=page_name.title(), error=str(err)), 400
 
     if len(table_new.rows()) == 0:
-        return render_template('dashboard/edit/failure.html', entity=page_name.title(), error='No changes made!'), 400
+        return render_template(
+            'dashboard/edit/failure.html', entity=page_name.title(), error='No changes made!'), 400
 
     return render_template(
         'dashboard/edit/edit_entity.html',
@@ -278,7 +278,8 @@ def edit_relationship_result(page_name: str):
         table_old, table_new = convert.record_deltas_to_tables(
             record_deltas, entity, headers)
     except data.ValidationFailedError as err:
-        return render_template('dashboard/edit/failure.html', entity=page_name.title(), error=str(err)), 400
+        return render_template(
+            'dashboard/edit/failure.html', entity=page_name.title(), error=str(err)), 400
 
     for rec_delta in record_deltas:  # save changes to db
         method = rec_delta['method']
@@ -293,7 +294,8 @@ def edit_relationship_result(page_name: str):
             res = delete_from_jt_coll(page_name, old_rec)
 
         if not res.is_ok:
-            return render_template('dashboard/edit/failure.html', entity=page_name.title(), error=res.msg), 500
+            return render_template(
+                'dashboard/edit/failure.html', entity=page_name.title(), error=res.msg), 500
 
     return render_template(
         'dashboard/edit/success.html',

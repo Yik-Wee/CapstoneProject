@@ -102,9 +102,13 @@ def insert_into_jt_coll(jt_coll_name: str, new_record: dict) -> DBUtilsResult:
 
     coll_1_records = coll_1.find(coll_1_to_find)
     if len(coll_1_records) > 1:  # handle more than 1 club found
-        return DBUtilsResult.error(f'ERROR WHILE INSERTING: More than 1 {table_1} records found')
+        return DBUtilsResult.error(
+            f'ERROR WHILE INSERTING: More than 1 {table_1} records found. \
+                Matching against: {coll_1_to_find}')
     elif len(coll_1_records) == 0:  # handle club not found
-        return DBUtilsResult.error(f'ERROR WHILE INSERTING: No {table_1} records found')
+        return DBUtilsResult.error(
+            f'ERROR WHILE INSERTING: No {table_1} records found. \
+                Matching against: {coll_1_to_find}')
     coll_1_id = coll_1_records[0]['id']
 
     # Find the student_id based on the student's details in new_record
@@ -116,9 +120,13 @@ def insert_into_jt_coll(jt_coll_name: str, new_record: dict) -> DBUtilsResult:
 
     coll_2_records = coll_2.find(coll_2_to_find)
     if len(coll_2_records) > 1:  # handle more than 1 student found
-        return DBUtilsResult.error(f'ERROR WHILE INSERTING: More than 1 {table_2} records found')
+        return DBUtilsResult.error(
+            f'ERROR WHILE INSERTING: More than 1 {table_2} records found. \
+                Matching against {coll_2_to_find}')
     elif len(coll_2_records) == 0:  # handle student not found
-        return DBUtilsResult.error(f'ERROR WHILE INSERTING: No {table_2} records found')
+        return DBUtilsResult.error(
+            f'ERROR WHILE INSERTING: No {table_2} records found. \
+                Matching against {coll_2_to_find}')
     coll_2_id = coll_2_records[0]['id']
 
     # Find the other info to insert (e.g. 'role' field in membership table)
@@ -136,9 +144,11 @@ def insert_into_jt_coll(jt_coll_name: str, new_record: dict) -> DBUtilsResult:
     # Insert the record containing the appropriate fields in membership table
     print(record_to_insert)
     jt_coll.insert(record_to_insert)
-    # TODO insert may throw error (?), handle error (try except?)    
+    # TODO insert may throw error (?), handle error (try except?)
     return DBUtilsResult.success()
 
+
+# naming convention below considers jt_coll_name = 'membership' because brain too smol
 
 def update_jt_coll(jt_coll_name: str, old_record: dict, new_record: dict) -> DBUtilsResult:
     """
@@ -203,14 +213,22 @@ def update_jt_coll(jt_coll_name: str, old_record: dict, new_record: dict) -> DBU
 
     old_club_records = club_coll.find(club_to_find)
     if len(old_club_records) > 1:
-        return DBUtilsResult.error(f'ERROR WHILE UPDATING: More than 1 {table_1} records found')
+        return DBUtilsResult.error(
+            f'ERROR WHILE UPDATING: More than 1 {table_1} records found. \
+                Matching against: {club_to_find}')
     elif len(old_club_records) == 0:
-        return DBUtilsResult.error(f'ERROR WHILE UPDATING: No {table_1} records found')
+        return DBUtilsResult.error(
+            f'ERROR WHILE UPDATING: No {table_1} records found. \
+                Matching against: {club_to_find}')
     new_club_records = club_coll.find(club_to_update)
     if len(new_club_records) > 1:
-        return DBUtilsResult.error(f'ERROR WHILE UPDATING: More than 1 {table_1} records found')
+        return DBUtilsResult.error(
+            f'ERROR WHILE UPDATING: More than 1 {table_1} records found. \
+                Matching against: {club_to_update}')
     elif len(new_club_records) == 0:
-        return DBUtilsResult.error(f'ERROR WHILE UPDATING: No {table_1} records found')
+        return DBUtilsResult.error(
+            f'ERROR WHILE UPDATING: No {table_1} records found. \
+                Matching against: {club_to_update}')
     old_club_id = old_club_records[0]['id']
     new_club_id = new_club_records[0]['id']
 
@@ -226,14 +244,22 @@ def update_jt_coll(jt_coll_name: str, old_record: dict, new_record: dict) -> DBU
 
     old_student_records = student_coll.find(student_to_find)
     if len(old_student_records) > 1:
-        return DBUtilsResult.error(f'ERROR WHILE UPDATING: More than 1 {table_2} records found')
+        return DBUtilsResult.error(
+            f'ERROR WHILE UPDATING: More than 1 {table_2} records found. \
+                Matching against: {student_to_find}')
     elif len(old_student_records) == 0:
-        return DBUtilsResult.error(f'ERROR WHILE UPDATING: No {table_2} records found')
-    new_student_records = student_coll.find(club_to_update)
+        return DBUtilsResult.error(
+            f'ERROR WHILE UPDATING: No {table_2} records found. \
+                Matching against: {student_to_find}')
+    new_student_records = student_coll.find(student_to_update)
     if len(new_student_records) > 1:
-        return DBUtilsResult.error(f'ERROR WHILE UPDATING: More than 1 {table_2} records found')
+        return DBUtilsResult.error(
+            f'ERROR WHILE UPDATING: More than 1 {table_2} records found. \
+                Matching against: {student_to_update}')
     elif len(new_student_records) == 0:
-        return DBUtilsResult.error(f'ERROR WHILE UPDATING: No {table_2} records found')
+        return DBUtilsResult.error(
+            f'ERROR WHILE UPDATING: No {table_2} records found. \
+                Matching against: {student_to_update}')
     old_student_id = old_student_records[0]['id']
     new_student_id = new_student_records[0]['id']
 
@@ -312,9 +338,13 @@ def delete_from_jt_coll(jt_coll_name: str, record: dict) -> DBUtilsResult:
 
     club_records = club_coll.find(club_to_find)
     if len(club_records) > 1:
-        return DBUtilsResult.error(f'ERROR WHILE DELETING: More than 1 {table_1} records found')
+        return DBUtilsResult.error(
+            f'ERROR WHILE DELETING: More than 1 {table_1} records found. \
+                Matching against: {club_to_find}')
     elif len(club_records) == 0:
-        return DBUtilsResult.error(f'ERROR WHILE DELETING: No {table_1} records found')
+        return DBUtilsResult.error(
+            f'ERROR WHILE DELETING: No {table_1} records found. \
+                Matching against: {club_to_find}')
     club_id = club_records[0]['id']
 
     student_to_find = {}
@@ -326,9 +356,13 @@ def delete_from_jt_coll(jt_coll_name: str, record: dict) -> DBUtilsResult:
 
     student_records = student_coll.find(student_to_find)
     if len(student_records) > 1:
-        return DBUtilsResult.error(f'ERROR WHILE DELETING: More than 1 {table_2} records found')
+        return DBUtilsResult.error(
+            f'ERROR WHILE DELETING: More than 1 {table_2} records found. \
+            Matching against: {student_to_find}')
     elif len(student_records) == 0:
-        return DBUtilsResult.error(f'ERROR WHILE DELETING: No {table_2} records found')
+        return DBUtilsResult.error(
+            f'ERROR WHILE DELETING: No {table_2} records found. \
+                Matching against: {student_to_find}')
     student_id = student_records[0]['id']
 
     jt_record_to_delete = {

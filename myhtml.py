@@ -1,9 +1,14 @@
+"""
+HTML module to generate HTML forms, tables and editable tables that act as forms.
+"""
+
+
 def input_tag(**kwargs):
     attrs = []
     for key, value in kwargs.items():
-        if value == False or None:
+        if value is False or value is None:
             continue
-        elif value == True:
+        elif value is True:
             attrs.append(key)
         else:
             attrs.append(f'{key}="{value}"')
@@ -250,7 +255,6 @@ class RecordTableForm(RecordTable):
         """
         self.__action = kwargs.get('action', '')
         self.__method = kwargs.get('method', 'get')
-        self.__search_by = kwargs.get('search_by')
         self.form_id = kwargs.get('form_id', 'table-form')
         super().__init__(**kwargs)
 
@@ -260,9 +264,6 @@ class RecordTableForm(RecordTable):
     def method(self):
         return self.__method
 
-    def search_by(self):
-        return self.__search_by
-    
     def _gen_headers_html(self) -> str:
         """Generate the headers of the table within a `<tr>` tag"""
         html = '<tr>'
@@ -293,7 +294,6 @@ class EditableRecordTable(RecordTableForm):
         - filter: dict
           The filter to search the records by
         """
-        self.__filter = kwargs.get('filter')
         header_types = kwargs.get('header_types', {})
         self.set_header_types(header_types)
         super().__init__(**kwargs)
@@ -347,57 +347,49 @@ class EditableRecordTable(RecordTableForm):
         html += '</table>'
 
         # Inject js to dynamically add/insert <tr> with <inputs> & appropriate data
+        html += self.__js_insert_row_button()
+        html += table_input(type="submit", value="Save Changes", form=self.form_id)
+        return html
+
+    def __js_insert_row_button(self) -> str:
+        """Generate the html/js for the button to add a new row of records"""
         _new_inputs = []
         for header in self.headers:
-            _new_inputs.append(
-                '<td>' +
-                table_input(type="hidden", name="old:"+header, value="(-)", form=self.form_id) +
-                table_input(type=self.__header_types[header], name="new:"+header, form=self.form_id) +
-                '</td>'
-            )
+            header_type = self.__header_types[header]
+            if isinstance(header_type, (list, tuple)):  # is dropdown
+                _new_td = f'''<td>
+                    {table_input(type="hidden", name="old:"+header, value="", form=self.form_id)}
+                    <select name="new:{header}" form="{self.form_id}">'''
+                dropdown_options = header_type
+                for option in dropdown_options:
+                    _new_td += f'<option value="{option}">{option}</option>'
+                _new_td += '</select></td>'
+                _new_inputs.append(_new_td)
+            else:
+                _new_inputs.append(
+                    '<td>' +
+                    table_input(type="hidden", name="old:"+header, value="", form=self.form_id) +
+                    table_input(type=self.__header_types[header], name="new:"+header, form=self.form_id) +
+                    '</td>'
+                )
         _new_inputs = ''.join(_new_inputs)
-        html += f'''<script>
-        function insertRow() {{
-            const tr = document.createElement("tr");
-            tr.className = "tr-insert";
-            tr.innerHTML = `{_new_inputs}` + 
-                `<td>
-                <input type="hidden" name="method" value="INSERT" form="{self.form_id}">
-                <button onclick="event.target.parentNode.parentNode.remove();">Remove</button>
-                </td>`;
-            document.getElementById("edit-table").appendChild(tr);
-        }}
-        </script>
-        <button onclick="insertRow()">+</button>'''
 
-        if self.search_by() is not None:
-            html += table_input(type="hidden", name="search_by", value=self.search_by(), form=self.form_id)
-        if self.__filter is not None:
-            for key, value in self.__filter.items():
-                html += table_input(type="hidden", name="filter:"+key, value=value, form=self.form_id)
-        html += table_input(type="submit", value="Save Changes", form=self.form_id)
-
-        return html
+        return f'''<script>
+            function insertRow() {{
+                const tr = document.createElement("tr");
+                tr.className = "tr-insert";
+                tr.innerHTML = `{_new_inputs}` + 
+                    `<td>
+                    <input type="hidden" name="method" value="INSERT" form="{self.form_id}">
+                    <button onclick="event.target.parentNode.parentNode.remove();">Remove</button>
+                    </td>`;
+                document.getElementById("edit-table").appendChild(tr);
+            }}
+            </script>
+            <button onclick="insertRow()">+</button>'''
 
 
 class SubmittableRecordTable(RecordTableForm):
-    def __init__(self, **kwargs):
-        """
-        Arguments:
-        - action: str
-          The action for each row's form element. Default '' (empty str)
-        - method: str
-          The method for each row's form element ('get' | 'post'). Default 'get'
-        - headers: list
-          The headers/columns of the table
-        - search_by: str
-          The records to filter/search by, specified in the request parameters. Default None
-        - filter: dict
-          The filter to search by
-        """
-        self.__filter = kwargs.get('filter')
-        super().__init__(**kwargs)
-
     def add_row(self, old_data: dict, new_data: dict, method: str):
         old_rows = []
         new_rows = []
@@ -431,12 +423,5 @@ class SubmittableRecordTable(RecordTableForm):
                 </td>'''
             html += '</tr>'
         html += '</table>'
-        if self.search_by() is not None:
-            html += table_input(type="hidden", name="search_by", value=self.search_by(), form=self.form_id)
-        if self.__filter is not None:
-            for key, value in self.__filter.items():
-                html += table_input(type="hidden", name="filter:"+key, value=value, form=self.form_id)
-
         html += table_input(type="submit", value="Save Changes", form=self.form_id)
-
         return html
