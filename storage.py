@@ -2,12 +2,8 @@
 Storage classes to interface with the db.
 """
 
-"""
-HALPPP
-- for find method need to do sth for when not found ?
-- if nth for find return empty list
-"""
 import sqlite3
+import schema as s
 
 class Collection:
     """
@@ -21,6 +17,9 @@ class Collection:
     db_path: str
     - The path to the db file
 
+    table_name: str
+    - The name of the table
+    
     Methods
     -------
     insert(record: dict) -> None
@@ -35,15 +34,39 @@ class Collection:
     delete(filter: dict) -> None
     - Deletes all records matching `filter` from the table
     """
-
+    
     column_names = NotImplemented
 
     def __init__(self, db_path: str):
         """Initialise a Collection which interfaces with the db specified by `db_path`"""
+        self.db_path = db_path
         pass
-    
+
+    def check_column(self, to_check: dict):
+        # Check that filter keys are valid column names
+        for key, value in to_check.items():
+            if key not in self.column_names:
+                raise KeyError(f"{key} is not a valid column name")
+
+    def execute(self, sql, values): #execute sql 
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row  # make returned stuff from c.fetch a dict instead of tuple
+            c = conn.cursor()
+            c.execute(sql, values)
+            results = c.fetchall()
+            conn.commit() 
+            # conn.close() is automatic
+
+            # results is empty (e.g. if doing SELECT ... and nothing found, [] returned)
+            if results == []:
+                return []
+            else:  # not empty, something returned
+                actually_dict = []  # initialise list of dicts
+                for record in results:  # convert each sqlite3.Row in the results to a dict
+                    actually_dict.append(dict(record))
+                return actually_dict
+
     def insert(self, record: dict) -> None:
-        
         """
         Insert a record into the db.
         Record DOES NOT need to include the primary key if it is auto-incremented.
@@ -62,7 +85,15 @@ class Collection:
         ```
         are both accepted as the id for table `club` is AUTOINCREMENT-ed
         """
-        pass
+        # TODO allow omission of `id` from record.
+        q_marks = '('
+        for i in record.values():
+            q_marks += '?, '
+
+        q_marks = q_marks[:-2]
+        q_marks += ')'
+        
+        self.execute(f"""INSERT INTO {self.table_name} VALUES {q_marks}""", list(record.values()))
 
     def find(self, filter: dict) -> dict:
         """
@@ -73,76 +104,7 @@ class Collection:
             'column_2': ...,
         }
         """
-        pass
-
-    def update(self, filter: dict, new_record: dict) -> None:
-        """
-        Update the old record(s) specified by `filter` with the `new_record`.
-        """
-        pass
-
-    def delete(self, filter: dict) -> None:
-        """
-        Delete the records from the table matching the `filter`.
-        """
-        pass
-
-
-class Students(Collection):
-    column_names = ['id', 'name', 'age', 'year_enrolled', 'graduating_year', 'class_id']
-    
-    def __init__(self, db_path):
-        self.db_path = db_path
-        # self.column_names = ['id', 'name', 'age', 'year_enrolled', 'graduating_year', 'class_id']
-        with sqlite3.connect(self.db_path) as conn:
-            c = conn.cursor()
-            c.execute("""CREATE TABLE IF NOT EXISTS student(
-                    id INTEGER, 
-                    name TEXT,
-                    age INTEGER,
-                    year_enrolled INTEGER,
-                    graduating_year INTEGER,
-                    class_id INTEGER,
-                    PRIMARY KEY(student_id)
-                     )""")
-            conn.commit()
-
-    def check_column(self, to_check: dict):
-        # Check that filter keys are valid column names
-        for key, value in to_check.items():
-            if key not in self.column_names:
-                raise KeyError(f"{key} is not a valid column name")
-
-    def execute(self, sql, values={}):
-        with sqlite3.connect(self.db_path) as conn:
-            conn.row_factory = sqlite3.Row  # make returned stuff from c.fetch a dict insteadof tuple
-            c = conn.cursor()
-            c.execute(sql, values)
-            results = c.fetchall()
-            conn.commit()
-            # conn.close() is automatic
-
-            # results is empty (e.g. if doing SELECT ... and nothing found, [] returned or () idk)
-            if results == []:
-                return []
-            else:  # not empty, something returned
-                # cant you just use map(dict, results)
-                # like return list(map(dict, results)) 
-                actually_dict = []  # initialise list of dicts
-                for record in results:  # convert each sqlite3.Row in the results to a dict
-                    actually_dict.append(dict(record))
-                return actually_dict
-
-    def insert(self, record: dict) -> None:
-
-        # TODO allow omission of `id` from record.
-        self.execute("""INSERT INTO student VALUES (?, ?, ?, ?, ?, ?)""", list(record.values()))
-
-    def find(self, filter: dict) -> dict:
-        """
-        Return all rows matching the filter specifications.
-        Return all columns from each record.
-        """
+        
         # Check that filter keys are valid column names
         self.check_column(filter)
 
@@ -156,12 +118,16 @@ class Students(Collection):
         sql = sql[:-4] #remove the final AND
         
         sql = f"""SELECT * 
-                  FROM student
+                  FROM {self.table_name}
                   WHERE {sql} """
         
         return self.execute(sql, list(values))
 
-    def update(self, filter, new_record) -> None:
+    def update(self, filter: dict, new_record: dict) -> None:
+        """
+        Update the old record(s) specified by `filter` with the `new_record`.
+        """
+        
         #check the columns in both filter and new_record
         self.check_column(filter)
         self.check_column(new_record)
@@ -187,32 +153,18 @@ class Students(Collection):
         sql = sql[:-4] #remove the final AND
         
         both = list(new_values) + list(values)
-        """
-        execute("UPDATE student 
-            SET 
-                a = ?,
-                b = ?
-            WHERE
-                c = ?,
-                d = ?
-        ", (1, 2, 3, 4))
-        become
-        UPDATE student
-        SET
-            a = 1,
-            b = 2
-        WHERE
-            c = 3,
-            d = 4
-        """
         
-        sql = f"""UPDATE student 
+        sql = f"""UPDATE {self.table_name} 
                   SET {new_sql}
                   WHERE {sql} """
         
         return self.execute(sql, list(both))
 
-    def delete(self, filter):
+    def delete(self, filter: dict) -> None:
+        """
+        Delete the records from the table matching the `filter`.
+        """
+        
         #check that keys in filter match the column names
         self.check_column(filter)
 
@@ -220,69 +172,94 @@ class Students(Collection):
         values = filter.values()
         sql = ''
 
-        for condition in conditions:
+        for condition in conditions: 
             sql += f"{condition} = ? AND "
         
         sql = sql[:-5] #remove the final AND 
         
-        self.execute(f"""DELETE FROM student WHERE {sql}""", list(values))
-            
+        self.execute(f"""DELETE FROM {self.table_name} WHERE {sql}""", list(values))
+        
+        pass
 
-class Subject(Collection):
+class Students(Collection):
+    column_names = ['id', 'student_name', 'age', 'year_enrolled', 'graduating_year', 'class_id']
+    table_name = 'Student'
+    
     def __init__(self, db_path):
         self.db_path = db_path
-        with sqlite3.connect(self.db_path) as conn:
-            c = conn.cursor()
-            c.execute("""CREATE TABLE IF NOT EXISTS subject(
-                    id INTEGER, 
-                    name TEXT,
-                    level TEXT,
-                    PRIMARY KEY(id)
-                    )""")
-            conn.commit()
-    
-    pass
+        self.execute(s.student_sql,())
 
+class Subject(Collection):
+    table_name = 'Subject'
+    column_names = ['id', 'subject_name', 'subject_level']
+    
+    def __init__(self, db_path):
+        self.db_path = db_path
+        self.execute(s.subject_sql, ())
 
 class Clubs(Collection):
-    pass
-
+    table_name = 'Club'
+    column_names = ['id', 'club_name']
+                   
+    def __init__(self, db_path):
+        self.db_path = db_path
+        self.execute(s.club_sql, ())
 
 class Activities(Collection):
-    pass
-
+    table_name = 'Avtivity'
+    column_names = ['id', 'start_date', 'end_date', 'desc']
+    
+    def __init__(self, db_path, table_name):
+        self.db_path = db_path
+        self.execute(s.activity_sql, ())
 
 class Classes(Collection):
-    pass
-
+    table_name = 'Class'
+    column_names = ['id', 'class_name', 'level']
+    
+    def __init__(self, db_path):
+        self.execute(s.class_sql, ())
 
 if __name__ == '__main__':
     # testing code
-    people = Students('school')
+    # people = Students()
     
-    ren = {
-        'student_id': 1,
-        'name': 'cassey',
-        'age': 17,
-        'year_enrolled': 2021,
-        'graduating_year': 2022,
-        'class_id': 1
-    }
+    # ren = {
+    #     'id': 1,
+    #     'name': 'cassey',
+    #     'age': 17,
+    #     'year_enrolled': 2021,
+    #     'graduating_year': 2022,
+    #     'class_id': 1
+    # }
 
-    ren_pt2 = {
-        'student_id': 1,
-        'name': 'cassey',
-        'age': 18,
-        'year_enrolled': 2021,
-        'graduating_year': 2022,
-        'class_id': 1
-    }
-    people.delete(ren_pt2)
-    people.insert(ren)
-    people.find({'name': 'cassey', 'age': 17})
-    people.update({'name': 'cassey'}, {'age': 18})
-    print(people.find({'name': 'cassey', 'age': 18}))
-    found = people.find({'class_id': 1})
-    for student in found:
-        print(dict(student))
-        print(student['name'])
+    # ren_pt2 = {
+    #     'id': 1,
+    #     'name': 'cassey',
+    #     'age': 18,
+    #     'year_enrolled': 2021,
+    #     'graduating_year': 2022,
+    #     'class_id': 1
+    # }
+    # people.delete(ren_pt2)
+    # people.insert(ren)
+    # print(people.find({'name': 'cassey', 'age': 17}))
+    # print('\n')
+    # people.update({'name': 'cassey'}, {'age': 18})
+    # print(people.find({'name': 'cassey', 'age': 18}))
+
+
+    # people = Subject('school')
+    # subject1 = {'id': 1, 'subject_name': 'MATH', 'subject_level':'H2'}
+    # people.insert(subject1)
+    # print(people.find({'id': 1}))
+    # people.update({'id':1}, {'subject_level':'H1'})
+    # print(people.find({'id':1}))
+
+    # people = Clubs('school')
+    # club1 = {'id':1, 'club_name':'AV'}
+    # people.delete(club1)
+    # people.insert(club1)
+    # print(people.find({'id':1}))
+    # people.update({'id': 1}, {'club_name':'AV'})
+    # print(people.find({'id':1}))
