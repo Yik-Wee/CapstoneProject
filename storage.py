@@ -1,6 +1,12 @@
 # pylint: disable=redefined-builtin
 
+from typing import List
+
+
 class Collection:
+    column_names: List[str] = [NotImplemented]
+    table_name: str = str(NotImplemented)
+
     def __init__(self, key):
         pass
 
@@ -21,6 +27,7 @@ class Students(Collection):
     def find(self, filter):
         return [
             {
+                'id': 6,
                 'name': 'OBAMA',
                 'age': 69,
                 'year_enrolled': 2008,
@@ -33,13 +40,8 @@ class Clubs(Collection):
     def find(self, filter):
         return [  # TETSING CODE
             {
+                'id': 1,
                 'name': 'HAPPY FUN CLUB',
-            },
-            {
-                'name': 'EPIC POGGERS CLUB',
-            },
-            {
-                'name': 'ILLEGAL SUBSTANCE ABUSE CLUB',
             },
         ]
 
@@ -48,6 +50,7 @@ class Activities(Collection):
     def find(self, filter):
         return [  # TESTING CODE
             {
+                'id': 10,
                 'description': 'yes',
                 'start_date': '2022-01-01',
                 'end_date': '2022-01-02',

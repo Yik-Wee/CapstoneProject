@@ -15,32 +15,11 @@ from model import (
     MembershipRecord,
     Student
 )
-from storage import (
-    Activities,
-    Classes,
-    Clubs,
-    Collection,
-    Membership,
-    Participation,
-    StudentSubject,
-    Students,
-    Subjects
-)
+
+from db_utils import colls, delete_from_jt_coll, insert_into_jt_coll, update_jt_coll
+
 
 app = Flask(__name__)
-
-
-# TODO change collection initialisation when storage.py is done (too lazy do now)
-colls: Dict[str, Collection] = {
-    'student': Students(key='student_id'),
-    'club': Clubs(key='club_id'),
-    'class': Classes(key='class_id'),
-    'activity': Activities(key='activity_id'),
-    'subject': Subjects(key='subject_id'),
-    'membership': Membership(key=None),
-    'participation': Participation(key=None),
-    'student-subject': StudentSubject(key=None),
-}
 
 
 ENTITIES: Dict[str, Entity] = {
@@ -164,7 +143,7 @@ def add_entity_result(page_name: str):
             error=str(err),
         ), 400
     else:
-        colls[page_name].insert(entity.as_dict())
+        colls[page_name].insert(entity.as_dict())  # TODO handle insert errors?
         table = convert.entity_to_table(entity)
         return render_template(
             'dashboard/add/success.html',
@@ -301,31 +280,20 @@ def edit_relationship_result(page_name: str):
     except data.ValidationFailedError as err:
         return render_template('dashboard/edit/failure.html', entity=page_name.title(), error=str(err)), 400
 
-    coll = colls[page_name]
-
     for rec_delta in record_deltas:  # save changes to db
         method = rec_delta['method']
         old_rec = rec_delta['old']
         new_rec = rec_delta['new']
 
-        # TODO impl junction table colls in storage.py (do outline for cassey + docstrings with below expl)
-        # the junction table coll should find the student_id and club_id from the old/new rec
-        # e.g. old_rec = { 'student_name': 'OBAMA', ..., 'club_name': 'POG CLUB', ..., 'role': 'president' }
-        #      then it should detect: student_id = 6, club_id = 9
-        #      if method == 'DELETE', it should execute:
-        #      DELETE FROM membership
-        #      WHERE
-        #          student_id = 6 AND
-        #          club_id = 9 AND
-        #          role = 'president';
-
-        # TODO handle sqlite3 exceptions (?)
         if method == 'INSERT':
-            coll.insert(new_rec)
+            res = insert_into_jt_coll(page_name, new_rec)
         elif method == 'UPDATE':
-            coll.update(old_rec, new_rec)
+            res = update_jt_coll(page_name, old_rec, new_rec)
         elif method == 'DELETE':
-            coll.delete(old_rec)
+            res = delete_from_jt_coll(page_name, old_rec)
+
+        if not res.is_ok:
+            return render_template('dashboard/edit/failure.html', entity=page_name.title(), error=res.msg), 500
 
     return render_template(
         'dashboard/edit/success.html',
