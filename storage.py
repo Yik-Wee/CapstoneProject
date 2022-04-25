@@ -184,8 +184,12 @@ class Students(Collection):
     table_name = 'Student'
     column_names = ['id', 'student_name', 'age',
                     'year_enrolled', 'graduating_year', 'class_id']
-    super().__init__(db_path)
-    self.execute(s.student_sql, ())
+    # super.__init__(db_path)
+    # self.execute(s.student_sql, ())
+
+    def __init__(self, db_path):
+        self.db_path = db_path
+        self.execute(s.student_sql, ())
   
 class Subject(Collection):
     table_name = 'Subject'
@@ -232,7 +236,7 @@ class Classes(Collection):
 class Membership(Collection):
     """Junction table for Student-Club membership many-to-many relationship"""
 
-    table_name = Student_club
+    table_name = 'Student_club'
     column_names = ['student_id', 'club_id', 'role']
 
     def __init__(self, db_path: str):
@@ -296,7 +300,7 @@ class Membership(Collection):
 class StudentSubject(Collection):  # not that impt
     """Junction table for Student-Subject many-to-many relationship"""
 
-    table_name = Student_subject
+    table_name = 'Student_subject'
     column_names = ['student_id', 'subject_id']
     
     def __init__(self, db_path: str):
@@ -328,7 +332,7 @@ class StudentSubject(Collection):  # not that impt
 class Participation(Collection):
     """Junction table for Student-Activity participation many-to-many relationship"""
 
-    table_name = Student_activity
+    table_name = 'Student_activity'
     column_names = ['student_id', 'subject_id', 'category', 'role', 'award', 'hours']
 
     def __init__(self, db_path: str):
