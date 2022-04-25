@@ -184,12 +184,9 @@ class Students(Collection):
     table_name = 'Student'
     column_names = ['id', 'student_name', 'age',
                     'year_enrolled', 'graduating_year', 'class_id']
-
-    def __init__(self, db_path):
-        self.db_path = db_path
-        self.execute(s.student_sql, ())
-
-
+    super().__init__(db_path)
+    self.execute(s.student_sql, ())
+  
 class Subject(Collection):
     table_name = 'Subject'
     column_names = ['id', 'subject_name', 'subject_level']
@@ -388,12 +385,12 @@ if __name__ == '__main__':
     # people.update({'name': 'cassey'}, {'age': 18})
     # print(people.find({'name': 'cassey', 'age': 18}))
 
-    people = Subject('school')
-    subject1 = {'id': 1, 'subject_name': 'MATH', 'subject_level': 'H2'}
-    people.insert(subject1)
-    print(people.find({'id': 1}))
-    people.update({'id': 1}, {'subject_level': 'H1'})
-    print(people.find({'id': 1}))
+    # people = Subject('school')
+    # subject1 = {'id': 1, 'subject_name': 'MATH', 'subject_level': 'H2'}
+    # people.insert(subject1)
+    # print(people.find({'id': 1}))
+    # people.update({'id': 1}, {'subject_level': 'H1'})
+    # print(people.find({'id': 1}))
 
     # people = Clubs('school')
     # club1 = {'id':1, 'club_name':'AV'}
