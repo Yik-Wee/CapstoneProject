@@ -13,7 +13,8 @@ from model import (
     Club,
     Entity,
     MembershipRecord,
-    Student
+    Student,
+    StudentSubjectRecord
 )
 
 from db_utils import colls, delete_from_jt_coll, insert_into_jt_coll, update_jt_coll
@@ -27,6 +28,7 @@ ENTITIES: Dict[str, Entity] = {
     'class': Class,
     'club': Club,
     'activity': Activity,
+    'student-subject': StudentSubjectRecord,
     'membership': MembershipRecord,
     'participation': ParticipationRecord,
 }
@@ -120,11 +122,14 @@ def add_entity(page_name: str):
         form = html.RecordForm(f'/dashboard/add/{page_name}?confirm', 'post')
         form = convert.entity_to_new_form(_entity, form)
 
+    form = f'<div class="center-form">{form.html()}</div>'
+    table = f'<div class="outline">{table.html()}</div>' if table else ''
+
     return render_template(
         'dashboard/add/add_entity.html',
         entity=_entity.entity,
-        form=form.html(),
-        table=table.html() if table else '',
+        form=form,
+        table=table,
         confirm=confirm,
     )
 
@@ -145,10 +150,11 @@ def add_entity_result(page_name: str):
     else:
         colls[page_name].insert(entity.as_dict())  # TODO handle insert errors?
         table = convert.entity_to_table(entity)
+        table = table = f'<div class="outline">{table.html()}</div>'
         return render_template(
             'dashboard/add/success.html',
             entity=entity.entity,
-            table=table.html(),
+            table=table,
         )
 
 
@@ -161,25 +167,28 @@ DASHBOARD_VIEW_EXISTING_PAGES = ('student', 'class', 'club', 'activity')
 @app.route('/dashboard/view/<page_name>', methods=['GET'])
 @for_existing_pages(DASHBOARD_VIEW_EXISTING_PAGES)
 def view_entity(page_name: str):
-    # TODO when viewing student, SELECT ... FROM student LEFT JOIN subject ON (...filter)
-    entity = ENTITIES[page_name]
-    coll = colls[page_name]
+    coll_name = page_name
+    if page_name == 'student':
+        coll_name = 'student-subject'
+    entity = ENTITIES[coll_name]
+    coll = colls[coll_name]
 
     record_filter = request.args.to_dict()
     records = coll.find(record_filter)
-    table = '🦧can\'t find anything'
+    table = '<div class="outline">🦧can\'t find anything</div>'
 
     form = html.RecordForm(f'/dashboard/view/{page_name}')
     form = convert.filter_to_form(record_filter, entity, form)
+    form = f'<div class="center-form">{form.html()}</div>'
 
     if records:
         table = convert.records_to_table(records)
-        table = table.html()
+        table = f'<div class="outline">{table.html()}</div>'
 
     return render_template(
         'dashboard/view/view_entity.html',
-        entity=entity.entity,
-        form=form.html(),
+        entity=page_name.title(),
+        form=form,
         table=table,
     )
 
@@ -200,13 +209,18 @@ def edit_relationship(page_name: str):
     coll = colls[page_name]  # e.g. membership coll for /membership
 
     # construct form to search for records
-    entity = ENTITIES[page_name]  # entity representing the many-to-many relationship
+    # entity representing the many-to-many relationship
+    entity = ENTITIES[page_name]
     form = html.RecordForm(action='', method='get')
-    form = convert.entity_to_form_with_values(entity, form, record_filter).html()
+    form = convert.entity_to_form_with_values(
+        entity, form, record_filter).html()
 
-    # find record(s) corresponding to the filter
-    # TODO handle error when filter has invalid keys
-    records_to_edit = coll.find(record_filter)  # record_filter specifies JOIN ON condition
+    # find record(s) corresponding to the filter specifying JOIN condition
+    try:  # handle error when filter has invalid keys
+        records_to_edit = coll.find(record_filter)
+    except KeyError:
+        records_to_edit = []
+
     if len(records_to_edit) == 0:
         table = '<div class="outline">🦧 Found nothing</div>'
     else:
@@ -243,8 +257,8 @@ def edit_relationship_confirm(page_name: str):
     # confirming changes, display changes in old and new table
     try:
         action = f'/dashboard/edit/{page_name}/result'
-        table_old, table_new = convert.record_deltas_to_submittable_tables(
-            record_deltas, entity, headers, action=action, method='post')
+        table_old, table_new = convert.record_deltas_to_tables(
+            record_deltas, entity, headers, action=action, method='post', submittable=True)
     except data.ValidationFailedError as err:
         return render_template(
             'dashboard/edit/failure.html', entity=page_name.title(), error=str(err)), 400

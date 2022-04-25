@@ -21,6 +21,12 @@ def __add_input_by_field(
         form.date_input(field.label, field.name, value=value)
     elif isinstance(field, data.Email):
         form.email_input(field.label, field.name, value=value)
+    elif isinstance(field, data.ConstrainedString):
+        options = field.constraints.copy()
+        if value in options:
+            options.remove(value)
+            options.insert(0, value)
+        form.dropdown_input(field.label, field.name, options)
     elif isinstance(field, data.String):
         form.text_input(field.label, field.name, value=value)
     elif isinstance(field, data.Number):
@@ -318,20 +324,20 @@ def post_data_to_record_deltas(
     return record_deltas
 
 
-def record_deltas_to_submittable_tables(
-    records: RecordDeltas,
+def record_deltas_to_tables(
+    record_deltas: RecordDeltas,
     entity: model.Entity,
     headers: List[str],
     **kwargs,
-) -> Tuple[html.RecordTable, html.SubmittableRecordTable]:
+) -> Tuple[html.RecordTable, html.RecordDeltaTable]:
     """
-    Converts the `records` to a normal `RecordTable` and a
+    Converts the `record_deltas` to a normal `RecordTable` and a
     `SubmittableRecordTable` which encapsulates the `RecordDeltas`
     to be submitted in a post request.
 
     Params
     ------
-    `records`: `RecordDeltas`
+    `record_deltas`: `RecordDeltas`
     - The changes to the records to be displayed in the 2 tables, and
       encapsulated in the `SubmittableRecordTable`
     `entity`: `Entity`
@@ -344,50 +350,22 @@ def record_deltas_to_submittable_tables(
     A tuple in the format: `(record_table, submittable_record_table)`
     """
     table_old = html.RecordTable(headers=headers)
-    table_new_submit = html.SubmittableRecordTable(headers=headers, **kwargs)
+    table_new_submit = html.RecordDeltaTable(headers=headers, **kwargs)
 
-    for recs in records:
-        old_record = recs['old']
-        new_record = recs['new']
-        _method = recs['method']
+    for rec_delta in record_deltas:
+        old_record = rec_delta['old']
+        new_record = rec_delta['new']
+        method = rec_delta['method']
 
         # validate the records
-        if _method != 'INSERT':
-            entity.from_dict(old_record)
-        entity.from_dict(new_record)
-
-        if _method == 'UPDATE' and new_record == old_record:
-            continue
-        # only add records with changes
-        table_old.add_row(old_record)
-        table_new_submit.add_row(old_record, new_record, _method)
-
-    return table_old, table_new_submit
-
-
-def record_deltas_to_tables(
-    records: RecordDeltas,
-    entity: model.Entity,
-    headers: List[str],
-) -> Tuple[html.RecordTable, html.RecordTable]:
-    """
-    Converts `records` to 2 `RecordTable`s using `entity` for data validation
-    """
-    table_old = html.RecordTable(headers=headers)
-    table_new = html.RecordTable(headers=headers)
-
-    for recs in records:
-        old_record = recs['old']
-        new_record = recs['new']
-        method = recs['method']
-        # validate records
         if method != 'INSERT':
             entity.from_dict(old_record)
         entity.from_dict(new_record)
 
-        if method == 'DELETE':
-            new_record = {k: f'🗑️<s>{v}</s>' for k, v in new_record.items()}
+        if method == 'UPDATE' and new_record == old_record:
+            continue
+        # only add records with changes
         table_old.add_row(old_record)
-        table_new.add_row(new_record)
+        table_new_submit.add_row(rec_delta)
 
-    return table_old, table_new
+    return table_old, table_new_submit

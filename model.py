@@ -98,6 +98,54 @@ class Activity(Entity):
     ]
 
 
+class Subject(Entity):
+    entity = 'Subject'
+    fields = [
+        ConstrainedString(
+            'subject_name',
+            'Subject Name',
+            constraints=[
+                'GP',
+                'MATH',
+                'FM',
+                'COMP',
+                'PHY',
+                'CHEM',
+                'ECONS',
+                'BIO',
+                'GEO',
+                'HIST',
+                'ELIT',
+                'ART',
+                'CLTRANS',
+                'CL',
+                'ML',
+                'TL',
+                'CLL',
+                'CLB',
+                'PW',
+                'PUNJABI',
+                'HINDI',
+                'BENGALESE',
+                'JAPANESE',
+            ]
+        ),
+        ConstrainedString(
+            'subject_level',
+            'Subject Level',
+            constraints=['H1', 'H2', 'H3']
+        )
+    ]
+
+
+class StudentSubjectRecord(Entity):
+    entity = 'Student-Subject'
+    fields = [
+        *Student.fields,
+        *Subject.fields,
+    ]
+
+
 class MembershipRecord(Entity):
     entity = 'Member'
     fields = [

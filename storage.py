@@ -24,12 +24,44 @@ class Collection:
 
 
 class Students(Collection):
-    column_names = ['student_name', 'age', 'year_enrolled', 'graduating_year']
+    column_names = ['id', 'student_name', 'age', 'year_enrolled', 'graduating_year']
 
     def find(self, filter):
-        if filter['student_name'] == 'JOE':
-            return [None, None]
-        if filter['student_name'] != 'OBAMA':
+        if filter.get('student_name') == 'k':
+            return [
+                {
+                    'id': 81,
+                    'student_name': 'k',
+                }
+            ]
+
+        if filter.get('student_name') == 'biden':
+            return [
+                {
+                    'id': 3,
+                    'student_name': 'biden',
+                    'age': 80,
+                    'year_enrolled': 2020,
+                    'graduating_year': 2024
+                },
+
+            ]
+        if filter.get('student_name') == 'JOE':
+            return [
+                {
+                    'id': 2,
+                    'student_name': 'JOE',
+                    'age': 80,
+                    'year_enrolled': 2020,
+                    'graduating_year': 2024
+                },
+                # {
+                #     'id': 9,
+                #     'student_name': 'JOE',
+                #     'age': 100,
+                # }
+            ]
+        if filter.get('student_name') != 'OBAMA':
             return []
         return [
             {

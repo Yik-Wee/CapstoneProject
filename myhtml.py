@@ -86,14 +86,16 @@ class RecordForm:
         self.__inputs.append(
             input_tag(id=name, type=type, name=name, value=value) + '<br>')
 
-    def dropdown_input(self, label: str, name: str, options: dict):
+    def dropdown_input(self, label: str, name: str, options: list):
         """
         Add a labelled select element to the form. Works as a dropdown menu.
         """
         self.__add_label(label, for_=name)
         html = f'<select name="{name}" id="{name}">'
-        for key, value in options.items():
-            html += f'<option value="{key}">{value}</option>'
+        for option in options:
+            html += f'<option value="{option}">{option}</option>'
+        # for key, value in options.items():
+        #     html += f'<option value="{key}">{value}</option>'
         html += '</select>'
         self.__inputs.append(html)
 
@@ -248,13 +250,14 @@ class RecordTableForm(RecordTable):
           The method for each row's form element ('get' | 'post'). Default 'get'
         - headers: list
           The headers/columns of the table
-        - search_by: str
-          The records to filter/search by, specified in the request parameters. Default None
+        - submittable: bool
+          Whether the table form is submittable or not. Default `False`
         - form_id: str
           The `id` of the form to be used. Default 'table-form'
         """
         self.__action = kwargs.get('action', '')
         self.__method = kwargs.get('method', 'get')
+        self.submittable = kwargs.get('submittable', False)
         self.form_id = kwargs.get('form_id', 'table-form')
         super().__init__(**kwargs)
 
@@ -389,8 +392,21 @@ class EditableRecordTable(RecordTableForm):
             <button onclick="insertRow()">+</button>'''
 
 
-class SubmittableRecordTable(RecordTableForm):
-    def add_row(self, old_data: dict, new_data: dict, method: str):
+class RecordDeltaTable(RecordTableForm):
+    def add_row(self, data: dict):
+        """
+        Add a row to the table from `data`, where `data` is in the format:
+        ```
+        {
+            "old": {...},
+            "new": {...},
+            "method": "INSERT" | "UPDATE" | "DELETE"
+        }
+        ```
+        """
+        return self.__add_row(data['old'], data['new'], data['method'])
+
+    def __add_row(self, old_data: dict, new_data: dict, method: str):
         old_rows = []
         new_rows = []
         for key in self.headers:
@@ -399,6 +415,9 @@ class SubmittableRecordTable(RecordTableForm):
         self._rows.append({'old': old_rows, 'new': new_rows, 'method': method})
 
     def html(self) -> str:
+        if not self.submittable:
+            return self.__html_no_submit()
+
         html = f'<form action="{self.action()}" method="{self.method()}" id="{self.form_id}"></form>'
         html += '<table>'
         html += self._gen_headers_html()
@@ -412,7 +431,7 @@ class SubmittableRecordTable(RecordTableForm):
                     new_item_display = f'🗑️<s>{old_item}</s>'
                 else:
                     new_item_display = new_item
-                
+
                 html += f'''<td>
                     {table_input(type="hidden", name="old:"+header, value=old_item, form=self.form_id)}
                     {table_input(type="hidden", name="new:"+header, value=new_item, form=self.form_id)}
@@ -424,4 +443,21 @@ class SubmittableRecordTable(RecordTableForm):
             html += '</tr>'
         html += '</table>'
         html += table_input(type="submit", value="Save Changes", form=self.form_id)
+        return html
+
+    def __html_no_submit(self) -> str:
+        html = '<table>'
+        html += self._gen_headers_html()
+        for row in self.rows():
+            method = row['method']
+            html += f'<tr class="tr-{method.lower()}">'
+            for i, new_item in enumerate(row['new']):
+                old_item = row['old'][i]
+                if method == 'DELETE':  # strikethrough to show deleted
+                    new_item_display = f'🗑️<s>{old_item}</s>'
+                else:
+                    new_item_display = new_item
+                html += f'<td>{new_item_display}</td>'
+            html += '</tr>'
+        html += '</table>'
         return html
