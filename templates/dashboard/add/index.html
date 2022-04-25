@@ -4,8 +4,22 @@
 Add
 {% endblock %}
 
+{% block css %}
+<style>
+    :root {
+        color: black;
+    }
+
+    a {
+        color: inherit;
+        position: relative;
+        top: 90%;
+        left: 5%;
+    }
+</style>
+{% endblock %}
+
 {% block body %}
-    <h1>Add</h1>
-    <a href="./add/club"><i>Club</i></a>
-    <a href="./add/activity"><i>Activity</i></a><br>
+<a href="./add/club"><i>Club</i></a>
+<a href="./add/activity"><i>Activity</i></a><br>
 {% endblock %}

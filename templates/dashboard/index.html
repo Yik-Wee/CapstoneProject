@@ -4,13 +4,18 @@
 Dashboard
 {% endblock %}
 
-{% block css%}
-
-{% endblock%}
+{% block css %}
+<stlye>
+    a {
+        position: absolute;
+        bottom: 50px;
+        left: 16px;
+    }
+</stlye>
+{% endblock %}
 
 {% block body %}
-<h1>Dashboard</h1>
-<div>
+<div class='choice'>
     <a class="item" href="/dashboard/add">Add</a><br>  
     <a href="/dashboard/view">View</a><br>
     <a href="/dashboard/edit">Edit</a><br>
