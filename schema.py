@@ -35,3 +35,29 @@ class_sql = """CREATE TABLE IF NOT EXISTS Class(
                     level TEXT,
                     PRIMARY KEY(id)
                     )"""
+
+student_club_sql = """CREATE TABLE IF NOT EXISTS Student_club(
+                    student_id INTEGER,
+                    club_id INTEGER,
+                    role TEXT,
+                    PRIMARY KEY(student_id),
+                    PRIMARY KEY(club_id)
+                    )"""
+
+student_subject_sql = """CREATE TABLE IF NOT EXISTS Student_subject(
+                    student_id INTEGER,
+                    subject_id INTEGER,
+                    PRIMARY KEY(student_id),
+                    PRIMARY KEY(subject_id)
+                    )"""
+
+student_activity_sql = """CREATE TABLE IF NOT EXISTS Student_activity(
+                    student_id INTEGER, 
+                    activity_id INTEGER, 
+                    category TEXT,
+                    role TEXT,
+                    award TEXT,
+                    hours TEXT,
+                    PRIMARY KEY(student_id),
+                    PRIMARY KEY(activity_id)
+                    )"""

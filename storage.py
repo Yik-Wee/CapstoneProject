@@ -232,12 +232,12 @@ class Classes(Collection):
 class Membership(Collection):
     """Junction table for Student-Club membership many-to-many relationship"""
 
-    # table_name = ...
-    # column_names = ...
+    table_name = Student_club
+    column_names = ['student_id', 'club_id', 'role']
 
     def __init__(self, db_path: str):
         super().__init__(db_path)
-        # exec s.whatever_sql
+        self.execute(s.student_club_sql, ())
 
     def find(self, filter: dict) -> dict:
         """
@@ -296,12 +296,12 @@ class Membership(Collection):
 class StudentSubject(Collection):  # not that impt
     """Junction table for Student-Subject many-to-many relationship"""
 
-    # table_name = ...
-    # column_names = ...
-
+    table_name = Student_subject
+    column_names = ['student_id', 'subject_id']
+    
     def __init__(self, db_path: str):
         super().__init__(db_path)
-        # exec s.whatever_sql
+        self.execute(s.student_subject_sql, ())
 
     def find(self, filter: dict) -> dict:
         """
@@ -328,12 +328,12 @@ class StudentSubject(Collection):  # not that impt
 class Participation(Collection):
     """Junction table for Student-Activity participation many-to-many relationship"""
 
-    # table_name = ...
-    # column_names = ...
+    table_name = Student_activity
+    column_names = ['student_id', 'subject_id', 'category', 'role', 'award', 'hours']
 
     def __init__(self, db_path: str):
         super().__init__(db_path)
-        # exec s.whatever_sql
+        self.execute(s.student_activity_sql, ())
 
     def find(self, filter: dict) -> dict:
         """
