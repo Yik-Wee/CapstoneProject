@@ -2,6 +2,11 @@
 Storage classes to interface with the db.
 """
 
+"""
+need to do the omission of id thing
+need to check if the student/wtv has alr been added?
+"""
+
 import sqlite3
 from typing import List
 import schema as s
@@ -210,7 +215,7 @@ class Clubs(Collection):
 
 
 class Activities(Collection):
-    table_name = 'Avtivity'  # <- misspelling :p
+    table_name = 'Activity'  # <- misspelling :p
     column_names = ['id', 'start_date', 'end_date', 'desc']
 
     def __init__(self, db_path):

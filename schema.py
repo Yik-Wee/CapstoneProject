@@ -40,15 +40,17 @@ student_club_sql = """CREATE TABLE IF NOT EXISTS Student_club(
                     student_id INTEGER,
                     club_id INTEGER,
                     role TEXT,
-                    PRIMARY KEY(student_id),
-                    PRIMARY KEY(club_id)
+                    PRIMARY KEY(student_id, club_id),
+                    FORIEGN KEY(club_id) REFERENCES Club(id),
+                    FORIEGN KET(sutudent_id) REFERENCES Student(id)
                     )"""
 
 student_subject_sql = """CREATE TABLE IF NOT EXISTS Student_subject(
                     student_id INTEGER,
                     subject_id INTEGER,
-                    PRIMARY KEY(student_id),
-                    PRIMARY KEY(subject_id)
+                    PRIMARY KEY(student_id, subject_id),
+                    FORIEGN KEY(student_id) REFERENCES(Student),
+                    FORIEGN KEY(subject_id) REFERENCES(Subject)
                     )"""
 
 student_activity_sql = """CREATE TABLE IF NOT EXISTS Student_activity(
@@ -58,6 +60,7 @@ student_activity_sql = """CREATE TABLE IF NOT EXISTS Student_activity(
                     role TEXT,
                     award TEXT,
                     hours TEXT,
-                    PRIMARY KEY(student_id),
-                    PRIMARY KEY(activity_id)
+                    PRIMARY KEY(student_id, activity_id),
+                    FORIEGN KEY(student_id) REFERENCES(Student),
+                    FORIEGN KEY(activity_id) REFERENCES(Activity)
                     )"""
