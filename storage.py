@@ -4,7 +4,8 @@ Storage classes to interface with the db.
 
 import sqlite3
 from typing import List
-import schema as s
+from . import schema as s
+
 
 class Collection:
     """
@@ -87,12 +88,13 @@ class Collection:
         ```
         are both accepted as the id for table `club` is AUTOINCREMENT-ed
         """
-        
+
         self.check_column(record)
 
-        existing_records = self.find(record) # to check if the record alr exists
+        # to check if the record alr exists
+        existing_records = self.find(record)
         if len(existing_records) > 0:  # integrity error as records must be unique
-            raise sqlite3.IntegrityError(f'Record already exists')
+            raise sqlite3.IntegrityError('Record already exists')
 
         q_marks = ''
         columns = []
@@ -129,11 +131,14 @@ class Collection:
             sql += f"{condition} = ? AND "  # for the WHERE part
         sql = sql[:-4]  # remove the final AND
 
-        sql = f"""SELECT * 
+        find_sql = f"""SELECT * 
                   FROM {self.table_name}
-                  WHERE {sql} """
+                  """
 
-        return self.execute(sql, list(values))
+        if sql != '':
+            find_sql += f'WHERE {sql};'
+
+        return self.execute(find_sql, list(values))
 
     def update(self, filter: dict, new_record: dict) -> None:
         """
@@ -189,6 +194,7 @@ class Collection:
         self.execute(
             f"""DELETE FROM {self.table_name} WHERE {sql}""", list(values))
 
+
 class Students(Collection):
     table_name = 'Student'
     column_names = ['id', 'student_name', 'age',
@@ -197,15 +203,16 @@ class Students(Collection):
     # self.execute(s.student_sql, ())
 
     def __init__(self, db_path):
-        self.db_path = db_path
+        super().__init__(db_path)
         self.execute(s.student_sql, ())
-  
+
+
 class Subjects(Collection):
     table_name = 'Subject'
     column_names = ['id', 'subject_name', 'subject_level']
 
     def __init__(self, db_path):
-        self.db_path = db_path
+        super().__init__(db_path)
         self.execute(s.subject_sql, ())
 
 
@@ -214,7 +221,7 @@ class Clubs(Collection):
     column_names = ['id', 'club_name']
 
     def __init__(self, db_path):
-        self.db_path = db_path
+        super().__init__(db_path)
         self.execute(s.club_sql, ())
 
 
@@ -223,7 +230,7 @@ class Activities(Collection):
     column_names = ['id', 'start_date', 'end_date', 'desc']
 
     def __init__(self, db_path):
-        self.db_path = db_path
+        super().__init__(db_path)
         self.execute(s.activity_sql, ())
 
 
@@ -232,7 +239,7 @@ class Classes(Collection):
     column_names = ['id', 'class_name', 'level']
 
     def __init__(self, db_path):
-        self.db_path = db_path
+        super().__init__(db_path)
         self.execute(s.class_sql, ())
 
 
@@ -279,15 +286,19 @@ class Membership(Collection):
         sql = sql[:-4]  # remove the final AND
 
         # execute sqlite left join e.g.
-        sql = f"""SELECT *
+        join_sql = """SELECT *
                 FROM Student
                 LEFT JOIN Student_club
                 ON Student.id = Student_club.student_id
                 LEFT JOIN Club
                 ON Club.id = Student_club.club_id
-                WHERE {sql};"""
-               
-        return self.execute(sql, list(values))
+                """
+
+        if sql != '':
+            join_sql += f"WHERE {sql};"
+
+        return self.execute(join_sql, list(values))
+
 
 class StudentSubject(Collection):  # not that impt
     """Junction table for Student-Subject many-to-many relationship"""
@@ -316,7 +327,6 @@ class StudentSubject(Collection):  # not that impt
             if key not in self.joined_column_names:
                 raise KeyError(f'Invalid key {key}')
 
-
         conditions = filter.keys()
         values = filter.values()
         sql = ''
@@ -325,23 +335,28 @@ class StudentSubject(Collection):  # not that impt
             sql += f"{condition} = ? AND "  # for the WHERE part
         sql = sql[:-4]  # remove the final AND
 
-
         # execute sqlite left join e.g.
-        sql = f"""SELECT *
+        join_sql = """SELECT *
                     FROM Student
                     LEFT JOIN Student_subject
                     ON Student.id = Student_subject.student_id
                     LEFT JOIN Subject
                     ON Subject.id = Student_subject.subject_id
-                    WHERE {sql}"""
+                    """
 
-        return self.execute(sql, list(values))
+        if sql != '':
+            join_sql += f'WHERE {sql}'
+
+        print(join_sql, values)
+        return self.execute(join_sql, list(values))
+
 
 class Participation(Collection):
     """Junction table for Student-Activity participation many-to-many relationship"""
 
     table_name = 'Student_activity'
-    column_names = ['student_id', 'subject_id', 'category', 'role', 'award', 'hours']
+    column_names = ['student_id', 'subject_id',
+                    'category', 'role', 'award', 'hours']
     joined_column_names = [
         *Students.column_names,
         *Activities.column_names,
@@ -372,104 +387,16 @@ class Participation(Collection):
             sql += f"{condition} = ? AND "  # for the WHERE part
         sql = sql[:-4]  # remove the final AND
 
-
         # execute sqlite left join e.g.
-        sql = f"""SELECT *
+        join_sql = """SELECT *
                     FROM Student
                     LEFT JOIN Student_activity
                     ON Student.id = Student_activity.student_id
                     LEFT JOIN Activity
                     ON Activity.id = Student_activity.activity_id
-                    WHERE {sql}"""
+                    """
 
-# if __name__ == '__main__':
-#     student = Students('test.db')
-#     student.insert({
-#         'id': 1,
-#         'student_name': 'OBAMA',
-#         'age': 10,
-#         'year_enrolled': 2008,
-#         'graduating_year': 2016,
-#     })
-#     student.insert({
-#         'student_name': 'JOEBAMA',
-#         'age': 9,
-#         'year_enrolled': 2021,
-#         'graduating_year': 2024,
-#     })
-#     club = Clubs('test.db')
-#     club.insert({
-#         'id': 1,
-#         'club_name': 'OBAMA FOUNDATION',
-#     })
-#     club.insert({
-#         'club_name': 'WHITE HOUSE',
-#     })
-#     membership = Membership('test.db')
-#     membership.insert({
-#         'student_id': 1,
-#         'club_id': 1,
-#         'role': 'leader',
-#     })
-#     membership.insert({
-#         'student_id': 1,
-#         'club_id': 2,
-#         'role': 'member',
-#     })
-#     membership.insert({
-#         'student_id': 2,
-#         'club_id': 2,
-#         'role': 'president'
-#     })
+        if sql != '':
+            join_sql += f'WHERE {sql};'
 
-#     obamas_clubs = membership.find({
-#         'student_name': 'OBAMA'
-#     })
-#     print(obamas_clubs)
-
-#     white_house_members = membership.find({
-#         'club_name': 'WHITE HOUSE'
-#     })
-#     print(white_house_members)
-
-#     # testing code
-#     # people = Students()
-
-#     # ren = {
-#     #     'id': 1,
-#     #     'name': 'cassey',
-#     #     'age': 17,
-#     #     'year_enrolled': 2021,
-#     #     'graduating_year': 2022,
-#     #     'class_id': 1
-#     # }
-
-#     # ren_pt2 = {
-#     #     'id': 1,
-#     #     'name': 'cassey',
-#     #     'age': 18,
-#     #     'year_enrolled': 2021,
-#     #     'graduating_year': 2022,
-#     #     'class_id': 1
-#     # }
-#     # people.delete(ren_pt2)
-#     # people.insert(ren)
-#     # print(people.find({'name': 'cassey', 'age': 17}))
-#     # print('\n')
-#     # people.update({'name': 'cassey'}, {'age': 18})
-#     # print(people.find({'name': 'cassey', 'age': 18}))
-
-#     # people = Subject('school')
-#     # subject1 = {'id': 1, 'subject_name': 'MATH', 'subject_level': 'H2'}
-#     # people.insert(subject1)
-#     # print(people.find({'id': 1}))
-#     # people.update({'id': 1}, {'subject_level': 'H1'})
-#     # print(people.find({'id': 1}))
-
-#     # people = Clubs('school')
-#     # club1 = {'id':1, 'club_name':'AV'}
-#     # people.delete(club1)
-#     # people.insert(club1)
-#     # print(people.find({'id':1}))
-#     # people.update({'id': 1}, {'club_name':'AV'})
-#     # print(people.find({'id':1}))
+        return self.execute(join_sql, list(values))
