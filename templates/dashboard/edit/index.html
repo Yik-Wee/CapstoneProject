@@ -4,18 +4,20 @@
 Edit
 {% endblock %}
 
-<!-- {% css block %}
+{% block css %}
 <style>
     a {
-        white-space: pre-wrap;
+        white-space: nowrap;
     }
 </style>
-{% endblock%} -->
+{% endblock %}
 
 {% block body %}
 <h1>Edit</h1>
 <div class="center-form center-line">
     <a href="./edit/membership" class='button glow-button'><i>Club Membership</i></a><br>
+    <br>
+    <br>
     <a href="./edit/participation" class='button glow-button'><i>Activity Participation</i></a>
 </div>
 {% endblock %}
