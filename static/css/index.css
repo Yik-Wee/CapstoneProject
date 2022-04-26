@@ -103,7 +103,14 @@ tr.tr-insert {
     margin-right: auto;
     width: min-content;
 }
-
+ .center-line {
+    margin-left: auto;
+    margin-right: auto;
+    width: min-content;
+    display: block;
+    align-items: center;
+    text-align: center;
+ }
 .topnav {
     height: var(--navbar-height);
     /* width: 100vw; */
@@ -143,9 +150,6 @@ tr.tr-insert {
     font-weight: normal;
     text-transform: uppercase;
     transition: all 0.2s ease-in-out;
-    margin-left: auto;
-    margin-right: auto;
-    width: min-content;
 }
 
 .glow-button:hover {
