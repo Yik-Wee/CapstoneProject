@@ -2,17 +2,21 @@
 
 {% block css %}
 <style>
-    :root {
-        color: white;
+    .choice {
+        margin-left: auto;
+        margin-right: auto;
+        width: min-content;
+        margin-top: 25%;
+/*         display: block; */
+        align-items: center;
+        text-align: center;
     }
-
-    a {
-        color: inherit;
-        position: relative;
-        /* top: 90%; */
-        /* left: 5%; */
+/*     .choice>*{
+        margin-left: auto;
+        margin-right: auto;
+        width: min-content;
     }
-    
+     */
     h1 {
         position: absolute;
         /* top:50%; */
@@ -23,16 +27,16 @@
         font-size: 60px;
     }
 
-    .background {
+/*     .background {
         background-image: url("{{ url_for('static', filename='image/bckimg.jpg') }}");
         background-size: cover;
         background-position: center;
         /* height: 100vh; */
-        height: calc(100% - var(--navbar-height));
+/*         height: calc(100% - var(--navbar-height)); */
         /* width: 100vw; */
-        width: 100%;
+/*         width: 100%;
         position: absolute;
-    }
+    } */ 
 </style>
 {% endblock %}
 
@@ -42,6 +46,10 @@ Splash page
 
 {% block body %}
 <h1>Welcome</h1>
-<a href="/dashboard"><i>Dashboard</i></a><br>
-<a href="/login"><i>Login</i></a>
+<div class='choice'>
+    <a href="/dashboard" class='button glow-button'><i>Dashboard</i></a><br>
+    <br>
+    <br>
+    <a href="/login" class='button glow-button'><i>Login</i></a>
+</div>
 {% endblock %}

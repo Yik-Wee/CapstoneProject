@@ -12,16 +12,21 @@
 
 h1 {
     font-family: dankmono;
+    text-align: center;
+    color: white;  
 }
 
 :root {
     font-family: dankmono;
     --navbar-height: 50px;
+    color: white;
 }
 
 body {
     padding-top: var(--navbar-height);
     margin: 0;
+    overflow-x: hidden;
+    background-color: #171533;
 }
 
 table {
@@ -127,4 +132,23 @@ tr.tr-insert {
 .topnav a.active {
     background-color: #5257ff;
     color: white;
+}
+
+.button {
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.8);
+    background: rgb(145, 92, 182);
+    padding: 15px 40px;
+    border-radius: 4px;
+    font-weight: normal;
+    text-transform: uppercase;
+    transition: all 0.2s ease-in-out;
+    margin-left: auto;
+    margin-right: auto;
+    width: min-content;
+}
+
+.glow-button:hover {
+/*  color: rgba(255, 255, 255, 10); */
+    box-shadow: 0px 0px 20px 15px rgba(255, 255, 255, .3);
 }

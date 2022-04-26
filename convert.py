@@ -213,8 +213,8 @@ class InvalidPostDataError(Exception):
 
 class RecordDelta(TypedDict):
     method: str
-    new: dict[str, Any]
-    old: dict[str, Any]
+    new: Dict[str, Any]
+    old: Dict[str, Any]
 
 
 RecordDeltas = List[RecordDelta]
