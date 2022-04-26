@@ -338,6 +338,8 @@ class StudentSubject(Collection):  # not that impt
         # execute sqlite LEFT JOIN e.g.
         join_sql = """SELECT *
                     FROM Student
+                    LEFT JOIN Class
+                    ON Student.class_id = Class.id
                     LEFT JOIN Student_subject
                     ON Student.id = Student_subject.student_id
                     LEFT JOIN Subject

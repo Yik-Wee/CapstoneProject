@@ -26,31 +26,7 @@ the expanded record looks something like
 """
 
 import sqlite3  # for errors
-from typing import Dict
-from .storage import (
-    Activities,
-    Classes,
-    Clubs,
-    Collection,
-    Membership,
-    Participation,
-    StudentSubject,
-    Students,
-    Subjects
-)
-
-
-DB_PATH = 'database/test.db'
-colls: Dict[str, Collection] = {
-    'student': Students(DB_PATH),
-    'club': Clubs(DB_PATH),
-    'class': Classes(DB_PATH),
-    'activity': Activities(DB_PATH),
-    'subject': Subjects(DB_PATH),
-    'membership': Membership(DB_PATH),
-    'participation': Participation(DB_PATH),
-    'student-subject': StudentSubject(DB_PATH),
-}
+from . import colls
 
 
 class DBUtilsResult:

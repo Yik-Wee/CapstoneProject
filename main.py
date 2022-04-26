@@ -2,6 +2,9 @@ from functools import wraps
 from typing import Callable, Iterable
 from flask import Flask, render_template, request
 import frontend
+# import database
+
+# database.init_db_from_csvs()
 
 app = Flask(__name__)
 
@@ -128,7 +131,7 @@ def admin():
 
 if __name__ == '__main__':
     # for production server:
-    # app.run('0.0.0.0')
+    app.run('0.0.0.0')
 
     # for dev server:
-    app.run('localhost', port=3000, debug=True)
+    # app.run('localhost', port=3000, debug=True)

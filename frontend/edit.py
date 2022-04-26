@@ -2,8 +2,8 @@ from flask import render_template, request
 import convert
 import data
 import myhtml as html
+from database import colls
 from database.db_utils import (
-    colls,
     delete_from_jt_coll,
     insert_into_jt_coll,
     update_jt_coll

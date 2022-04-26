@@ -31,7 +31,7 @@ activity_sql = """CREATE TABLE IF NOT EXISTS Activity(
 
 class_sql = """CREATE TABLE IF NOT EXISTS Class(
                     id INTEGER,
-                    name TEXT,
+                    class_name TEXT,
                     level TEXT,
                     PRIMARY KEY(id)
                     )"""
