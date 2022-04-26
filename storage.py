@@ -289,7 +289,21 @@ class Membership(Collection):
         ...
 
         # get join conditions from filter (the WHERE part)
-        ...
+        self.check_column(filter) #check column names
+
+        conditions = filter.keys()
+        values = filter.values()
+        sql = ''
+
+        for condition in conditions:
+            sql += f"{condition} = ? AND "  # for the WHERE part
+        sql = sql[:-4]  # remove the final AND
+
+        # sql = f"""SELECT * 
+        #           FROM {self.table_name}
+        #           WHERE {sql} """
+
+        return self.execute(sql, list(values))
 
         # execute sqlite left join e.g.
         # SELECT ...
@@ -298,7 +312,7 @@ class Membership(Collection):
         # ON Student.id = StudentClub.student_id
         # LEFT JOIN Club
         # ON Club.id = StudentClub.club_id
-        # WHERE ...
+        # WHERE {sql}
         ...
 
 
