@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 from data import ConstrainedString, Field, Number, OptionalDate, OptionalNumber, OptionalString, ValidationFailedError, String, Date, Year
 
 
@@ -169,3 +169,15 @@ class ParticipationRecord(Entity):
         OptionalString('award', 'Award'),  # optional
         OptionalNumber('hours', 'Hours'),  # optional
     ]
+
+
+# EXPORT
+ENTITIES: Dict[str, Entity] = {
+    'student': Student,
+    'class': Class,
+    'club': Club,
+    'activity': Activity,
+    'student-subject': StudentSubjectRecord,
+    'membership': MembershipRecord,
+    'participation': ParticipationRecord,
+}

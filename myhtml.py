@@ -323,7 +323,7 @@ class EditableRecordTable(RecordTableForm):
             html += '<tr>'
             for idx, item in enumerate(row):
                 header = self.headers[idx]
-                header_type = self.__header_types[header]
+                header_type = self.__header_types.get(header, 'text')
                 if isinstance(header_type, (list, tuple)):  # is dropdown, returned value is constraints
                     constraints = header_type.copy()
                     html += '<td>'
@@ -358,7 +358,7 @@ class EditableRecordTable(RecordTableForm):
         """Generate the html/js for the button to add a new row of records"""
         _new_inputs = []
         for header in self.headers:
-            header_type = self.__header_types[header]
+            header_type = self.__header_types.get(header, 'text')
             if isinstance(header_type, (list, tuple)):  # is dropdown
                 _new_td = f'''<td>
                     {table_input(type="hidden", name="old:"+header, value="", form=self.form_id)}
@@ -372,7 +372,7 @@ class EditableRecordTable(RecordTableForm):
                 _new_inputs.append(
                     '<td>' +
                     table_input(type="hidden", name="old:"+header, value="", form=self.form_id) +
-                    table_input(type=self.__header_types[header], name="new:"+header, form=self.form_id) +
+                    table_input(type=self.__header_types.get(header, 'text'), name="new:"+header, form=self.form_id) +
                     '</td>'
                 )
         _new_inputs = ''.join(_new_inputs)
