@@ -292,10 +292,6 @@ class EditableRecordTable(RecordTableForm):
         - header_types: dict
           the input types for the table's headers
           (see `set_header_types()`)
-        - search_by: str
-          The records to filter/search by, specified in the request parameters. Default None
-        - filter: dict
-          The filter to search the records by
         """
         header_types = kwargs.get('header_types', {})
         self.set_header_types(header_types)
@@ -330,7 +326,8 @@ class EditableRecordTable(RecordTableForm):
                     html += table_input(type="hidden", name="old:"+header, value=item, form=self.form_id)
                     html += f'<select name="new:{header}" form="{self.form_id}">'
                     html += f'<option value="{item}">{item}</option>'
-                    constraints.remove(item)
+                    if item in constraints:
+                        constraints.remove(item)
                     for option in constraints:
                         html += f'<option value="{option}">{option}</option>'
                     html += '</select>'

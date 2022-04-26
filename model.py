@@ -1,5 +1,17 @@
 from typing import Dict, List
-from data import ConstrainedString, Field, Number, OptionalDate, OptionalNumber, OptionalString, ValidationFailedError, String, Date, Year
+from data import (
+    ConstrainedString,
+    Field,
+    Number,
+    OptionalDate,
+    OptionalNumber,
+    OptionalString,
+    ValidationFailedError,
+    String,
+    Date,
+    Year
+)
+# pylint: disable=not-an-iterable, no-member
 
 
 class Entity:
@@ -11,6 +23,7 @@ class Entity:
     """
     entity: str = NotImplemented
     fields: List[Field] = NotImplemented
+    search_fields: List[Field] = NotImplemented
 
     def __init__(self, **kwargs):
         for field in self.fields:
@@ -41,7 +54,10 @@ class Entity:
         """Returns the record as a dict."""
         rec = {}
         for field in self.fields:
-            rec[field.name] = getattr(self, field.name)
+            value = getattr(self, field.name)
+            if value == '':  # Empty fields should be NULL (None)
+                value = None
+            rec[field.name] = value
         return rec
 
     def get(self, key):
@@ -63,6 +79,7 @@ class Student(Entity):
         Year('year_enrolled', 'Year Enrolled'),
         Year('graduating_year', 'Graduating Year'),
     ]
+    search_fields = [String('student_name', 'Name (as in NRIC)')]
 
 
 class Class(Entity):
@@ -76,6 +93,9 @@ class Class(Entity):
         String('class_name', 'Name'),
         ConstrainedString('level', 'Level', constraints=['JC1', 'JC2']),  # {JC1, JC2}
     ]
+    search_fields = [
+        String('class_name', 'Name'),
+    ]
 
 
 class Club(Entity):
@@ -84,9 +104,8 @@ class Club(Entity):
     - Name: str
     """
     entity = 'Club'
-    fields = [
-        String('club_name', 'Name of club'),
-    ]
+    fields = [String('club_name', 'Club Name')]
+    search_fields = [String('club_name', 'Club Name')]
 
 
 class Activity(Entity):
@@ -94,8 +113,9 @@ class Activity(Entity):
     fields = [
         Date('start_date', 'Start Date'),
         OptionalDate('end_date', 'End Date'),  # optional
-        String('description', 'Description'),
+        String('desc', 'Short Description (Activity Name)'),
     ]
+    search_fields = [Date('start_date', 'Start Date')]
 
 
 class Subject(Entity):
@@ -136,6 +156,7 @@ class Subject(Entity):
             constraints=['H1', 'H2', 'H3']
         )
     ]
+    search_fields = [fields[0]]
 
 
 class StudentSubjectRecord(Entity):
@@ -144,22 +165,26 @@ class StudentSubjectRecord(Entity):
         *Student.fields,
         *Subject.fields,
     ]
+    search_fields = [*Student.search_fields, *Subject.search_fields]
 
 
 class MembershipRecord(Entity):
     entity = 'Member'
     fields = [
-        *Student.fields,
-        *Club.fields,
+        OptionalNumber('student_id', 'Student ID'),
+        String('student_name', 'Student Name'),  # show student name (not unique)
+        String('club_name', 'Club Name'),  # club name is unique
         String('role', 'Role'),  # default 'member'
     ]
+    search_fields = [*Student.search_fields, *Club.search_fields]
 
 
 class ParticipationRecord(Entity):
     entity = 'Participant'
     fields = [
-        *Student.fields,
-        *Activity.fields,
+        OptionalNumber('student_id', 'Student ID'),
+        String('student_name', 'Student Name'),  # show student name (not unique)
+        String('desc', 'Short Description (Activity Name)'),
         ConstrainedString(
             'category',
             'Category',
@@ -169,6 +194,7 @@ class ParticipationRecord(Entity):
         OptionalString('award', 'Award'),  # optional
         OptionalNumber('hours', 'Hours'),  # optional
     ]
+    search_fields = [*Student.search_fields, *Activity.search_fields]
 
 
 # EXPORT

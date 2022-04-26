@@ -1,8 +1,6 @@
 from functools import wraps
 from typing import Callable, Iterable
-
 from flask import Flask, render_template, request
-
 import frontend
 
 app = Flask(__name__)

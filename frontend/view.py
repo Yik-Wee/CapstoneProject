@@ -3,21 +3,23 @@ from model import ENTITIES
 from db_utils import colls
 import myhtml as html
 import convert
+from ._helpers import remove_empty_keys_from_filter
 
 
 def view(page_name: str):
     coll_name = page_name
-    if page_name == 'student':
+    if page_name == 'student':  # only for student, view student and their subjects
         coll_name = 'student-subject'
     entity = ENTITIES[coll_name]
     coll = colls[coll_name]
 
     record_filter = request.args.to_dict()
+    remove_empty_keys_from_filter(record_filter)
     records = coll.find(record_filter)
     table = '<div class="outline">🦧can\'t find anything</div>'
 
     form = html.RecordForm(f'/dashboard/view/{page_name}')
-    form = convert.filter_to_form(record_filter, entity, form)
+    form = convert.entity_to_form_with_values(entity, form, record_filter)
     form = f'<div class="center-form">{form.html()}</div>'
 
     if records:
@@ -30,4 +32,3 @@ def view(page_name: str):
         form=form,
         table=table,
     )
-

@@ -46,7 +46,7 @@ class Collection:
 
     def check_column(self, to_check: dict) -> None:
         # Check that filter keys are valid column names
-        for key, value in to_check.items():
+        for key in to_check:
             if key not in self.column_names:
                 raise KeyError(f"{key} is not a valid column name")
 
@@ -94,7 +94,7 @@ class Collection:
         # to check if the record alr exists
         existing_records = self.find(record)
         if len(existing_records) > 0:  # integrity error as records must be unique
-            raise sqlite3.IntegrityError('Record already exists')
+            raise sqlite3.IntegrityError(f'Record {record} already exists as {existing_records}')
 
         q_marks = ''
         columns = []
@@ -131,7 +131,7 @@ class Collection:
             sql += f"{condition} = ? AND "  # for the WHERE part
         sql = sql[:-4]  # remove the final AND
 
-        find_sql = f"""SELECT * 
+        find_sql = f"""SELECT *
                   FROM {self.table_name}
                   """
 
@@ -285,12 +285,12 @@ class Membership(Collection):
             sql += f"{condition} = ? AND "  # for the WHERE part
         sql = sql[:-4]  # remove the final AND
 
-        # execute sqlite left join e.g.
+        # execute sqlite INNER JOIN e.g.
         join_sql = """SELECT *
                 FROM Student
-                LEFT JOIN Student_club
+                INNER JOIN Student_club
                 ON Student.id = Student_club.student_id
-                LEFT JOIN Club
+                INNER JOIN Club
                 ON Club.id = Student_club.club_id
                 """
 
@@ -318,7 +318,7 @@ class StudentSubject(Collection):  # not that impt
     def find(self, filter: dict) -> dict:
         """
         Find all records in the student-subject table matching filter, returning
-        records in student, subject and student-subject tables (LEFT JOIN-ed) (see Membership)
+        records in student, subject and student-subject tables (INNER JOIN-ed) (see Membership)
         """
 
         # get join conditions from filter (the WHERE part)
@@ -335,7 +335,7 @@ class StudentSubject(Collection):  # not that impt
             sql += f"{condition} = ? AND "  # for the WHERE part
         sql = sql[:-4]  # remove the final AND
 
-        # execute sqlite left join e.g.
+        # execute sqlite LEFT JOIN e.g.
         join_sql = """SELECT *
                     FROM Student
                     LEFT JOIN Student_subject
@@ -347,7 +347,6 @@ class StudentSubject(Collection):  # not that impt
         if sql != '':
             join_sql += f'WHERE {sql}'
 
-        print(join_sql, values)
         return self.execute(join_sql, list(values))
 
 
@@ -370,7 +369,7 @@ class Participation(Collection):
     def find(self, filter: dict) -> dict:
         """
         Find all records in the student-subject table matching filter, returning
-        records in student, subject and student-subject tables (LEFT JOIN-ed) (see Membership)
+        records in student, subject and student-subject tables (INNER JOIN-ed) (see Membership)
         """
 
         # get join conditions from filter (the WHERE part)
@@ -387,12 +386,12 @@ class Participation(Collection):
             sql += f"{condition} = ? AND "  # for the WHERE part
         sql = sql[:-4]  # remove the final AND
 
-        # execute sqlite left join e.g.
+        # execute sqlite INNER JOIN e.g.
         join_sql = """SELECT *
                     FROM Student
-                    LEFT JOIN Student_activity
+                    INNER JOIN Student_activity
                     ON Student.id = Student_activity.student_id
-                    LEFT JOIN Activity
+                    INNER JOIN Activity
                     ON Activity.id = Student_activity.activity_id
                     """
 

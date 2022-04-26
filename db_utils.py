@@ -12,7 +12,7 @@ e.g. instead of
     'role': 'member'             # <- belongs to student-club
 }
 ```
-the expanded record looks something like like
+the expanded record looks something like
 ```
 {
     'student_name': 'OBAMA',     # <- belongs to student
@@ -37,6 +37,7 @@ from storage import (
     Students,
     Subjects
 )
+import sqlite3  # for errors
 
 
 DB_PATH = 'test.db'
@@ -129,6 +130,7 @@ def insert_into_jt_coll(jt_coll_name: str, new_record: dict) -> DBUtilsResult:
             f'ERROR WHILE INSERTING: No {table_2} records found. \
                 Matching against {coll_2_to_find}')
     coll_2_id = coll_2_records[0]['id']
+    print(coll_2_records, coll_2_id)
 
     # Find the other info to insert (e.g. 'role' field in membership table)
     record_to_insert = {
@@ -137,16 +139,18 @@ def insert_into_jt_coll(jt_coll_name: str, new_record: dict) -> DBUtilsResult:
     }
     jt_coll = colls[jt_coll_name]
     for column_name in jt_coll.column_names:
-        value = new_record.get(column_name)
-        if value is None:
+        value = new_record.get(column_name, '')
+        if value == '':
             continue
         record_to_insert[column_name] = value
 
     # Insert the record containing the appropriate fields in membership table
     print(record_to_insert)
     jt_coll.insert(record_to_insert)
-    # TODO insert may throw error (?), handle error (try except?)
-    return DBUtilsResult.success()
+    try:
+        return DBUtilsResult.success()
+    except sqlite3.IntegrityError as err:
+        return DBUtilsResult.error(str(err))
 
 
 # naming convention below considers jt_coll_name = 'membership' because brain too smol
@@ -162,12 +166,10 @@ def update_jt_coll(jt_coll_name: str, old_record: dict, new_record: dict) -> DBU
     old_record = {
         'student_name': 'OBAMA',
         'student_club': 'WHITE HOUSE',
-        'role': 'member',
     }
     new_record = {
         'student_name': 'OBAMA',
         'student_club': 'OBAMA FOUNDATION',
-        'role': 'leader',
     }
     ```
     will execute:
@@ -176,12 +178,10 @@ def update_jt_coll(jt_coll_name: str, old_record: dict, new_record: dict) -> DBU
         {
             'student_id': 6,
             'club_id': 1,
-            'role': 'member',
         },
         {
             'student_id': 6,
             'club_id': 4,
-            'role': 'leader',
         },
     )
     ```
@@ -275,21 +275,22 @@ def update_jt_coll(jt_coll_name: str, old_record: dict, new_record: dict) -> DBU
 
     jt_coll = colls[jt_coll_name]
     for column_name in jt_coll.column_names:
-        old_value = old_record.get(column_name)
-        new_value = new_record.get(column_name)
-        if old_value is None:
+        old_value = old_record.get(column_name, '')
+        new_value = new_record.get(column_name, '')
+        if old_value == '':
             continue
         old_jt_records[column_name] = old_value
-        if new_value is None:
+        if new_value == '':
             continue
         new_jt_records[column_name] = new_value
 
     print(old_jt_records)
     print(new_jt_records)
     jt_coll.update(old_jt_records, new_jt_records)
-    # TODO handle possible sqlite3 error?
-
-    return DBUtilsResult.success()
+    try:
+        return DBUtilsResult.success()
+    except sqlite3.IntegrityError as err:
+        return DBUtilsResult.error(str(err))
 
 
 def delete_from_jt_coll(jt_coll_name: str, record: dict) -> DBUtilsResult:
@@ -372,12 +373,14 @@ def delete_from_jt_coll(jt_coll_name: str, record: dict) -> DBUtilsResult:
     }
     jt_coll = colls[jt_coll_name]
     for column_name in jt_coll.column_names:
-        value = record.get(column_name)
-        if value is None:
+        value = record.get(column_name, '')
+        if value == '':
             continue
         jt_record_to_delete[column_name] = value
 
     print(jt_record_to_delete)
     jt_coll.delete(jt_record_to_delete)
-    # TODO handle sqlite3 err?
-    return DBUtilsResult.success()
+    try:
+        return DBUtilsResult.success()
+    except sqlite3.IntegrityError as err:
+        return DBUtilsResult.error(str(err))

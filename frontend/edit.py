@@ -1,17 +1,29 @@
+from flask import render_template, request
 import convert
 import data
-from flask import render_template, request
-from model import ENTITIES
-from db_utils import colls, delete_from_jt_coll, insert_into_jt_coll, update_jt_coll
 import myhtml as html
+from db_utils import (
+    colls,
+    delete_from_jt_coll,
+    insert_into_jt_coll,
+    update_jt_coll
+)
+from model import ENTITIES
 
 from .errors import invalid_post_data
+from ._helpers import (
+    remove_empty_keys_from_filter,
+    record_deltas_to_tables,
+    post_data_to_record_deltas,
+    InvalidPostDataError
+)
 
 ACCEPTED_METHODS = ('UPDATE', 'DELETE', 'INSERT')
 
 
 def edit(page_name: str):
     record_filter = request.args.to_dict()  # conditions for left join
+    remove_empty_keys_from_filter(record_filter)
     coll = colls[page_name]  # e.g. membership coll for /membership
 
     # construct form to search for records
@@ -23,12 +35,24 @@ def edit(page_name: str):
 
     # find record(s) corresponding to the filter specifying JOIN condition
     try:  # handle error when filter has invalid keys
-        records_to_edit = coll.find(record_filter)
+        all_records_to_edit = coll.find(record_filter)
     except KeyError:
-        records_to_edit = []
+        all_records_to_edit = []
+
+    records_to_edit = []
+    for rec in all_records_to_edit:
+        rec_to_edit = {}
+        for field in entity.fields:
+            rec_to_edit[field.name] = rec.get(field.name, '')
+        records_to_edit.append(rec_to_edit)
+    print(all_records_to_edit, records_to_edit)
 
     if len(records_to_edit) == 0:
-        table = '<div class="outline">🦧 Found nothing</div>'
+        msg = '<h3>🦧 Found nothing</h3>'
+        headers = [field.name for field in entity.fields]
+        header_types = convert.entity_to_header_types(entity)
+        table = html.EditableRecordTable(headers=headers, header_types=header_types)
+        table = f'''<div class="outline">{msg}{table.html()}</div>'''
     else:
         # display table of members of the club. gives user the entire
         # INNER/LEFT JOIN student-club junction table to edit for simplicity
@@ -53,9 +77,9 @@ def edit_confirm(page_name: str):
     post_data = request.form.to_dict(flat=False)
     entity = ENTITIES[page_name]
     try:
-        record_deltas = convert.post_data_to_record_deltas(
+        record_deltas = post_data_to_record_deltas(
             post_data, ACCEPTED_METHODS, entity)
-    except convert.InvalidPostDataError as err:
+    except InvalidPostDataError as err:
         return invalid_post_data(str(err))
 
     headers = list(record_deltas[0]['old'].keys())
@@ -63,7 +87,7 @@ def edit_confirm(page_name: str):
     # confirming changes, display changes in old and new table
     try:
         action = f'/dashboard/edit/{page_name}/result'
-        table_old, table_new = convert.record_deltas_to_tables(
+        table_old, table_new = record_deltas_to_tables(
             record_deltas, entity, headers, action=action, method='post', submittable=True)
     except data.ValidationFailedError as err:
         return render_template(
@@ -86,15 +110,15 @@ def edit_res(page_name: str):
     post_data = request.form.to_dict(flat=False)
     entity = ENTITIES[page_name]
     try:
-        record_deltas = convert.post_data_to_record_deltas(
+        record_deltas = post_data_to_record_deltas(
             post_data, ACCEPTED_METHODS, entity)
-    except convert.InvalidPostDataError as err:
+    except InvalidPostDataError as err:
         return invalid_post_data(str(err))
 
     headers = list(record_deltas[0]['old'].keys())
 
     try:  # html table conversion includes data validation
-        table_old, table_new = convert.record_deltas_to_tables(
+        table_old, table_new = record_deltas_to_tables(
             record_deltas, entity, headers)
     except data.ValidationFailedError as err:
         return render_template(
@@ -107,10 +131,13 @@ def edit_res(page_name: str):
 
         if method == 'INSERT':
             res = insert_into_jt_coll(page_name, new_rec)
+            # coll.insert(new_rec)
         elif method == 'UPDATE':
             res = update_jt_coll(page_name, old_rec, new_rec)
+            # coll.update(old_rec, new_rec)
         elif method == 'DELETE':
             res = delete_from_jt_coll(page_name, old_rec)
+            # coll.delete(old_rec)
 
         if not res.is_ok:
             return render_template(
