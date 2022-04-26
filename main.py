@@ -16,6 +16,9 @@ from model import (
     Student,
     StudentSubjectRecord
 )
+from frontend import (
+    add
+)
 
 from db_utils import colls, delete_from_jt_coll, insert_into_jt_coll, update_jt_coll
 

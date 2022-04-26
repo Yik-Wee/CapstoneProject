@@ -49,8 +49,8 @@ student_subject_sql = """CREATE TABLE IF NOT EXISTS Student_subject(
                     student_id INTEGER,
                     subject_id INTEGER,
                     PRIMARY KEY(student_id, subject_id),
-                    FOREIGN KEY(student_id) REFERENCES(Student),
-                    FOREIGN KEY(subject_id) REFERENCES(Subject)
+                    FOREIGN KEY(student_id) REFERENCES Student(id),
+                    FOREIGN KEY(subject_id) REFERENCES Subject(id)
                     )"""
 
 student_activity_sql = """CREATE TABLE IF NOT EXISTS Student_activity(
@@ -61,6 +61,6 @@ student_activity_sql = """CREATE TABLE IF NOT EXISTS Student_activity(
                     award TEXT,
                     hours TEXT,
                     PRIMARY KEY(student_id, activity_id),
-                    FOREIGN KEY(student_id) REFERENCES(Student),
-                    FOREIGN KEY(activity_id) REFERENCES(Activity)
+                    FOREIGN KEY(student_id) REFERENCES Student(id),
+                    FOREIGN KEY(activity_id) REFERENCES Activity(id)
                     )"""

@@ -39,15 +39,16 @@ from storage import (
 )
 
 
+DB_PATH = 'test.db'
 colls: Dict[str, Collection] = {
-    'student': Students(key='student_id'),
-    'club': Clubs(key='club_id'),
-    'class': Classes(key='class_id'),
-    'activity': Activities(key='activity_id'),
-    'subject': Subjects(key='subject_id'),
-    'membership': Membership(key=None),
-    'participation': Participation(key=None),
-    'student-subject': StudentSubject(key=None),
+    'student': Students(DB_PATH),
+    'club': Clubs(DB_PATH),
+    'class': Classes(DB_PATH),
+    'activity': Activities(DB_PATH),
+    'subject': Subjects(DB_PATH),
+    'membership': Membership(DB_PATH),
+    'participation': Participation(DB_PATH),
+    'student-subject': StudentSubject(DB_PATH),
 }
 
 

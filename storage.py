@@ -4,7 +4,7 @@ Storage classes to interface with the db.
 
 import sqlite3
 from typing import List
-from . import schema as s
+import schema as s
 
 
 class Collection:
