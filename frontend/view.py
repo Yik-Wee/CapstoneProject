@@ -1,6 +1,6 @@
 from flask import render_template, request
 from model import ENTITIES
-from db_utils import colls
+from database.db_utils import colls
 import myhtml as html
 import convert
 from ._helpers import remove_empty_keys_from_filter

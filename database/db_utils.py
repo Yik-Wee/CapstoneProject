@@ -25,8 +25,9 @@ the expanded record looks something like
 ```
 """
 
+import sqlite3  # for errors
 from typing import Dict
-from storage import (
+from .storage import (
     Activities,
     Classes,
     Clubs,
@@ -37,10 +38,9 @@ from storage import (
     Students,
     Subjects
 )
-import sqlite3  # for errors
 
 
-DB_PATH = 'test.db'
+DB_PATH = 'database/test.db'
 colls: Dict[str, Collection] = {
     'student': Students(DB_PATH),
     'club': Clubs(DB_PATH),

@@ -5,7 +5,7 @@ from model import ENTITIES
 import myhtml as html
 import data
 import convert
-from db_utils import colls
+from database.db_utils import colls
 
 
 def __failure(entity: str, err: str):
