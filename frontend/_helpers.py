@@ -41,8 +41,8 @@ class RecordDelta(TypedDict):
     }
     ```
     """
-    old: dict[str, Any]
-    new: dict[str, Any]
+    old: Dict[str, Any]
+    new: Dict[str, Any]
     method: str
 
 
