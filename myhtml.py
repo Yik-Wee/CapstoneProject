@@ -307,6 +307,7 @@ class EditableRecordTable(RecordTableForm):
                 if isinstance(header, ConstrainedString):  # is dropdown
                     constraints = header.constraints.copy()
                     html += '<td>'
+                    html += table_input(type="hidden", name="old:"+header.name, value=item, form=self.form_id)
                     html += self.__dropdown(constraints, header.name, item)
                     html += '</td>'
                 else:  # not dropdown, just regular input
