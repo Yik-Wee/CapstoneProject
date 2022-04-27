@@ -131,7 +131,7 @@ if __name__ == '__main__':
     # database.init_db_from_csvs()
 
     # for production server:
-    # app.run('0.0.0.0')
+    app.run('0.0.0.0')
 
     # for dev server:
-    app.run('localhost', port=3000, debug=True)
+    #app.run('localhost', port=3000, debug=True)

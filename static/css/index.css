@@ -12,25 +12,30 @@
 
 h1 {
     font-family: dankmono;
+    text-align: center;
+    color: white;  
 }
 
 :root {
     font-family: dankmono;
     --navbar-height: 50px;
+    color: white;
 }
 
 body {
     padding-top: var(--navbar-height);
     margin: 0;
+    overflow-x: hidden;
+    background-color: #171533;
 }
 
 table {
     border-collapse: collapse;
-    border: 2px solid black;
+    border: 2px solid #7395ba;
 }
 
 td, th {
-    border: 1px solid black;
+    border: 1px solid #7395ba;
     padding: 4px;
     text-align: center;
 }
@@ -78,7 +83,7 @@ tr.tr-insert {
 }
 
 .outline {
-    outline: 1.5px solid black;
+    outline: 1.5px solid #7395ba;
     padding: 1ch;
     margin-top: 0;
     max-height: 550px;
@@ -98,7 +103,14 @@ tr.tr-insert {
     margin-right: auto;
     width: min-content;
 }
-
+ .center-line {
+    margin-left: auto;
+    margin-right: auto;
+    width: min-content;
+    display: block;
+    align-items: center;
+    text-align: center;
+ }
 .topnav {
     height: var(--navbar-height);
     /* width: 100vw; */
@@ -127,4 +139,24 @@ tr.tr-insert {
 .topnav a.active {
     background-color: #5257ff;
     color: white;
+}
+
+.button {
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.8);
+    background: rgb(145, 92, 182);
+    padding: 15px 40px;
+    border-radius: 4px;
+    font-weight: normal;
+    text-transform: uppercase;
+    transition: all 0.2s ease-in-out;
+}
+
+.glow-button:hover {
+/*  color: rgba(255, 255, 255, 10); */
+    box-shadow: 0px 0px 20px 15px rgba(255, 255, 255, .3);
+}
+
+searchform {
+    position: center;
 }

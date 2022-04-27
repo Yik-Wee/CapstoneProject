@@ -15,8 +15,10 @@ Edit {{ entity }}
     <h3>New Clubs/Members</h3>
     {{ table_new|safe }}
 {% else %}
-    <h2>Search By:</h2>
-    {{ form|safe }}
+    <div id="searchform">
+        <h2>Search By:</h2>
+        {{ form|safe }}
+    </div>
     <h2>Results:</h2>
     {{ table|safe }}
 {% endif %}
