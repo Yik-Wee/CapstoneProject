@@ -122,8 +122,8 @@ def insert_into_jt_coll(jt_coll_name: str, new_record: dict) -> DBUtilsResult:
 
     # Insert the record containing the appropriate fields in membership table
     print(record_to_insert)
-    jt_coll.insert(record_to_insert)
     try:
+        jt_coll.insert(record_to_insert)
         return DBUtilsResult.success()
     except sqlite3.IntegrityError as err:
         return DBUtilsResult.error(str(err))
@@ -262,8 +262,8 @@ def update_jt_coll(jt_coll_name: str, old_record: dict, new_record: dict) -> DBU
 
     print(old_jt_records)
     print(new_jt_records)
-    jt_coll.update(old_jt_records, new_jt_records)
     try:
+        jt_coll.update(old_jt_records, new_jt_records)
         return DBUtilsResult.success()
     except sqlite3.IntegrityError as err:
         return DBUtilsResult.error(str(err))
@@ -355,8 +355,8 @@ def delete_from_jt_coll(jt_coll_name: str, record: dict) -> DBUtilsResult:
         jt_record_to_delete[column_name] = value
 
     print(jt_record_to_delete)
-    jt_coll.delete(jt_record_to_delete)
     try:
+        jt_coll.delete(jt_record_to_delete)
         return DBUtilsResult.success()
     except sqlite3.IntegrityError as err:
         return DBUtilsResult.error(str(err))

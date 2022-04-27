@@ -45,18 +45,14 @@ def edit(page_name: str):
         for field in entity.fields:
             rec_to_edit[field.name] = rec.get(field.name, '')
         records_to_edit.append(rec_to_edit)
-    print(all_records_to_edit, records_to_edit)
 
     headers = entity.fields
     if len(records_to_edit) == 0:
         msg = '🦧 Found nothing'
-        # table = html.EditableRecordTable(headers=headers)
-        # table = f'''<div class="outline">{msg}{table.html()}</div>'''
     else:
         msg = f'✍️ Edit {entity.entity}s'
 
-    # display table of members of the club. gives user the entire
-    # INNER/LEFT JOIN student-club junction table to edit for simplicity
+    # display table of members of the club
     table = convert.records_to_editable_table(
         records_to_edit, headers=headers, action='?confirm', method='post')
     table = f'''<div class="outline">
@@ -122,6 +118,8 @@ def edit_res(page_name: str):
         return render_template(
             'dashboard/edit/failure.html', entity=page_name.title(), error=str(err)), 400
 
+    errors = []
+    total_edits = 0
     for rec_delta in record_deltas:  # save changes to db
         method = rec_delta['method']
         old_rec = rec_delta['old']
@@ -129,17 +127,21 @@ def edit_res(page_name: str):
 
         if method == 'INSERT':
             res = insert_into_jt_coll(page_name, new_rec)
-            # coll.insert(new_rec)
         elif method == 'UPDATE':
             res = update_jt_coll(page_name, old_rec, new_rec)
-            # coll.update(old_rec, new_rec)
         elif method == 'DELETE':
             res = delete_from_jt_coll(page_name, old_rec)
-            # coll.delete(old_rec)
 
+        total_edits += 1
         if not res.is_ok:
-            return render_template(
-                'dashboard/edit/failure.html', entity=page_name.title(), error=res.msg), 500
+            errors.append(res.msg)
+
+    error_count = len(errors)
+    if error_count > 0:
+        err_msg = f'<h3>{total_edits} Edits Made With {error_count} Errors</h3>'
+        err_msg += '<br>'.join(errors)
+        return render_template(
+            'dashboard/edit/failure.html', entity=page_name.title(), error=err_msg), 500
 
     return render_template(
         'dashboard/edit/success.html',

@@ -356,7 +356,7 @@ class Participation(Collection):
     """Junction table for Student-Activity participation many-to-many relationship"""
 
     table_name = 'Student_activity'
-    column_names = ['student_id', 'subject_id',
+    column_names = ['student_id', 'activity_id',
                     'category', 'role', 'award', 'hours']
     joined_column_names = [
         *Students.column_names,

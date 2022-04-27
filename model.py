@@ -173,7 +173,7 @@ class StudentSubjectRecord(Entity):
 class MembershipRecord(Entity):
     entity = 'Member'
     fields = [
-        OptionalNumber('student_id', 'Student ID'),
+        OptionalNumber('student_id', 'Student ID (Optional)'),
         String('student_name', 'Student Name'),  # show student name (not unique)
         String('club_name', 'Club Name'),  # club name is unique
         String('role', 'Role'),  # default 'member'
@@ -184,7 +184,7 @@ class MembershipRecord(Entity):
 class ParticipationRecord(Entity):
     entity = 'Participant'
     fields = [
-        OptionalNumber('student_id', 'Student ID'),
+        OptionalNumber('student_id', 'Student ID (Optional)'),
         String('student_name', 'Student Name'),  # show student name (not unique)
         String('desc', 'Short Description (Activity Name)'),
         ConstrainedString(

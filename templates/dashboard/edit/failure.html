@@ -6,5 +6,5 @@ Failure
 
 {% block body %}
 <h1>Failure! Unable to edit {{ entity }}</h1>
-{{ error }}
+{{ error|safe }}
 {% endblock %}

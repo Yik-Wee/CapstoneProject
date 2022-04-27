@@ -2,7 +2,7 @@
 HTML module to generate HTML forms, tables and editable tables that act as forms.
 """
 
-from typing import List
+from typing import Any, List
 from data import ConstrainedString, Field
 
 
@@ -217,7 +217,7 @@ class RecordTable:
             row.append(data[header.name])
         self._rows.append(row)
 
-    def _gen_headers_html(self) -> str:
+    def _table_headers_html(self) -> str:
         """Generate the headers of the table within a `<tr>` tag"""
         html = '<tr>'
         for header in self.headers:
@@ -237,7 +237,7 @@ class RecordTable:
         - str (HTML format)
         """
         html = '<table>'
-        html += self._gen_headers_html()
+        html += self._table_headers_html()
         for row in self._rows:
             html += '<tr>'
             for item in row:
@@ -275,16 +275,30 @@ class RecordTableForm(RecordTable):
     def method(self):
         return self.__method
 
+    def _form_html(self) -> str:
+        return f'<form action="{self.action()}" method="{self.method()}" id="{self.form_id}"></form>'
+
 
 class EditableRecordTable(RecordTableForm):
     """
     Display an html RecordTable with the ability to edit each rows/record's fields.
     """
 
+    def __dropdown(self, options: list, header_name: str, item: Any) -> str:
+        html = f'<select name="new:{header_name}" form="{self.form_id}">'
+        html += f'<option value="{item}">{item}</option>'
+        if item in options:
+            options.remove(item)
+        for option in options:
+            html += f'<option value="{option}">{option}</option>'
+        html += '</select>'
+        html += '</td>'
+        return html
+
     def html(self) -> str:
-        html = f'<form action="{self.action()}" method="{self.method()}" id="{self.form_id}"></form>'
+        html = self._form_html()
         html += '<table id="edit-table">'
-        html += self._gen_headers_html()
+        html += self._table_headers_html()
         for row in self.rows():
             html += '<tr>'
             for idx, item in enumerate(row):
@@ -293,14 +307,7 @@ class EditableRecordTable(RecordTableForm):
                 if isinstance(header, ConstrainedString):  # is dropdown
                     constraints = header.constraints.copy()
                     html += '<td>'
-                    html += table_input(type="hidden", name="old:"+header.name, value=item, form=self.form_id)
-                    html += f'<select name="new:{header.name}" form="{self.form_id}">'
-                    html += f'<option value="{item}">{item}</option>'
-                    if item in constraints:
-                        constraints.remove(item)
-                    for option in constraints:
-                        html += f'<option value="{option}">{option}</option>'
-                    html += '</select>'
+                    html += self.__dropdown(constraints, header.name, item)
                     html += '</td>'
                 else:  # not dropdown, just regular input
                     html += f'''<td>
@@ -326,11 +333,11 @@ class EditableRecordTable(RecordTableForm):
         _new_inputs = []
         for header in self.headers:
             header_type = header.html_input_type
-            if isinstance(header_type, (list, tuple)):  # is dropdown
+            if isinstance(header, ConstrainedString):  # is dropdown
                 _new_td = f'''<td>
                     {table_input(type="hidden", name="old:"+header.name, value="", form=self.form_id)}
                     <select name="new:{header.name}" form="{self.form_id}">'''
-                dropdown_options = header_type
+                dropdown_options = header.constraints
                 for option in dropdown_options:
                     _new_td += f'<option value="{option}">{option}</option>'
                 _new_td += '</select></td>'
@@ -385,9 +392,9 @@ class RecordDeltaTable(RecordTableForm):
         if not self.submittable:
             return self.__html_no_submit()
 
-        html = f'<form action="{self.action()}" method="{self.method()}" id="{self.form_id}"></form>'
+        html = self._form_html()
         html += '<table>'
-        html += self._gen_headers_html()
+        html += self._table_headers_html()
         for row in self.rows():
             method = row['method']
             html += f'<tr class="tr-{method.lower()}">'
@@ -414,7 +421,7 @@ class RecordDeltaTable(RecordTableForm):
 
     def __html_no_submit(self) -> str:
         html = '<table>'
-        html += self._gen_headers_html()
+        html += self._table_headers_html()
         for row in self.rows():
             method = row['method']
             html += f'<tr class="tr-{method.lower()}">'
