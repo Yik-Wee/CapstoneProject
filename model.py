@@ -115,7 +115,7 @@ class Activity(Entity):
         OptionalDate('end_date', 'End Date'),  # optional
         String('desc', 'Short Description (Activity Name)'),
     ]
-    search_fields = [Date('start_date', 'Start Date')]
+    search_fields = [String('desc', 'Short Description (Activity Name)')]
 
 
 class Subject(Entity):

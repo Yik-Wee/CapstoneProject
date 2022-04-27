@@ -65,7 +65,7 @@ def entity_to_form_with_values(
     for field in entity.search_fields:
         value = values.get(field.name, '')
         __add_input_by_field(form, field, value)
-    form.submit_input()
+    form.submit_input('Search')
     return form
 
 
