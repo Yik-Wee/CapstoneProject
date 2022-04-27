@@ -162,8 +162,10 @@ class Subject(Entity):
 class StudentSubjectRecord(Entity):
     entity = 'Student-Subject'
     fields = [
+        Number('student_id', 'Student ID'),
         *Student.fields,
         *Subject.fields,
+        *Class.fields,
     ]
     search_fields = [*Student.search_fields, *Subject.search_fields]
 

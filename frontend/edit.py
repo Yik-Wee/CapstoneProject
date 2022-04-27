@@ -47,23 +47,22 @@ def edit(page_name: str):
         records_to_edit.append(rec_to_edit)
     print(all_records_to_edit, records_to_edit)
 
+    headers = entity.fields
     if len(records_to_edit) == 0:
-        msg = '<h3>🦧 Found nothing</h3>'
-        headers = [field.name for field in entity.fields]
-        header_types = convert.entity_to_header_types(entity)
-        table = html.EditableRecordTable(headers=headers, header_types=header_types)
-        table = f'''<div class="outline">{msg}{table.html()}</div>'''
+        msg = '🦧 Found nothing'
+        # table = html.EditableRecordTable(headers=headers)
+        # table = f'''<div class="outline">{msg}{table.html()}</div>'''
     else:
-        # display table of members of the club. gives user the entire
-        # INNER/LEFT JOIN student-club junction table to edit for simplicity
-        table = convert.records_to_editable_table(
-            records_to_edit, action='?confirm', method='post')
-        header_types = convert.entity_to_header_types(entity=entity)
-        table.set_header_types(header_types)
-        table = f'''<div class="outline">
-            <h3>✍️ Edit {entity.entity}s</h3>
-            {table.html()}
-        </div>'''
+        msg = f'✍️ Edit {entity.entity}s'
+
+    # display table of members of the club. gives user the entire
+    # INNER/LEFT JOIN student-club junction table to edit for simplicity
+    table = convert.records_to_editable_table(
+        records_to_edit, headers=headers, action='?confirm', method='post')
+    table = f'''<div class="outline">
+        <h3>{msg}</h3>
+        {table.html()}
+    </div>'''
 
     return render_template(
         'dashboard/edit/edit_entity.html',
@@ -82,7 +81,7 @@ def edit_confirm(page_name: str):
     except InvalidPostDataError as err:
         return invalid_post_data(str(err))
 
-    headers = list(record_deltas[0]['old'].keys())
+    headers = entity.fields
 
     # confirming changes, display changes in old and new table
     try:
@@ -115,11 +114,10 @@ def edit_res(page_name: str):
     except InvalidPostDataError as err:
         return invalid_post_data(str(err))
 
-    headers = list(record_deltas[0]['old'].keys())
+    headers = entity.fields
 
     try:  # html table conversion includes data validation
-        table_old, table_new = record_deltas_to_tables(
-            record_deltas, entity, headers)
+        table_old, table_new = record_deltas_to_tables(record_deltas, entity, headers)
     except data.ValidationFailedError as err:
         return render_template(
             'dashboard/edit/failure.html', entity=page_name.title(), error=str(err)), 400

@@ -2,7 +2,7 @@
 Convert data to html or to other data
 """
 
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 import data
 import model
 import myhtml as html
@@ -96,12 +96,13 @@ def entity_to_table(entity: model.Entity) -> html.RecordTable:
     - table
     """
     record = entity.as_dict()
-    table = html.RecordTable(headers=record.keys())
+    headers = entity.fields
+    table = html.RecordTable(headers=headers)
     table.add_row(record)
     return table
 
 
-def records_to_table(records: List[dict]) -> html.RecordTable:
+def records_to_table(records: List[dict], headers: List[data.Field]) -> html.RecordTable:
     """
     IMPORTANT
     ---------
@@ -114,7 +115,6 @@ def records_to_table(records: List[dict]) -> html.RecordTable:
     not empty.
     Uses keys from `records[0]` as headers for the `RecordTable`.
     """
-    headers = list(records[0].keys())
     table = html.RecordTable(headers=headers)
     for record in records:
         table.add_row(record)
@@ -123,6 +123,7 @@ def records_to_table(records: List[dict]) -> html.RecordTable:
 
 def records_to_editable_table(
     records: List[dict],
+    headers: List[data.Field],
     **kwargs
 ) -> html.EditableRecordTable:
     """
@@ -134,53 +135,7 @@ def records_to_editable_table(
     ---------
     Converts the `records` to `EditableRecordTable` using `**kwargs`
     """
-    headers = list(records[0].keys())
     table = html.EditableRecordTable(headers=headers, **kwargs)
     for record in records:
         table.add_row(record)
     return table
-
-
-# ------------------------------
-# Functions/Utils to convert data to non-html
-# ------------------------------
-
-
-def __field_to_input_type(field: data.Field) -> Union[str, List[str]]:
-    """
-    Returns the type of the html input tag based on the `field` instance
-    """
-    if isinstance(field, data.Date):
-        return 'date'
-    elif isinstance(field, data.Email):
-        return 'email'
-    elif isinstance(field, data.ConstrainedString):
-        return field.constraints
-    elif isinstance(field, data.String):
-        return 'text'
-    elif isinstance(field, data.Number):
-        return 'number'
-    return 'text'  # fallback input type
-
-
-def entity_to_header_types(entity: model.Entity) -> Dict[str, str]:
-    """
-    Get the input types of the fields of the `entity`.
-    e.g. For `entity`: `Student` with fields
-        String('name', 'Name (as in NRIC)'),
-        Number('age', 'Age'),
-        Year('year_enrolled', 'Year Enrolled'),
-        Year('graduating_year', 'Graduating Year'),
-    the input/header types are
-        {
-            'name': 'text',
-            'age': 'number',
-            'year_enrolled': 'year',
-            'graduating_year': 'year',
-        }
-    """
-    header_types = {}
-    for field in entity.fields:
-        input_type = __field_to_input_type(field)
-        header_types[field.name] = input_type
-    return header_types

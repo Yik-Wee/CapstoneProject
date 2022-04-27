@@ -15,12 +15,13 @@ class Field:
     - name
     - label
     - validator
-    
+
     Each field generates:
     - formatted string
     - html <input> element
     """
     validate: Callable = NotImplemented
+    html_input_type: str = 'text'  # default <input type="text">
 
     def __init__(self, name: str, label: str):
         self.name = name
@@ -44,10 +45,7 @@ class Number(Field):
     - label: str
     """
     validate: Callable = staticmethod(valid.number)
-
-    def __init__(self, name: str, label: str):
-        super().__init__(name, label)
-        self.__value = None
+    html_input_type: str = 'number'
 
 
 class OptionalNumber(Number):
@@ -71,13 +69,11 @@ class String(Field):
       Used to validate input values
     """
 
+    html_input_type: str = 'text'
+
     @staticmethod
     def validate(value: Any) -> bool:
         return value != '' and valid.string(value)
-
-    # def __init__(self, name: str, label: str):
-    #     self.name = name
-    #     self.label = label
 
 
 class ConstrainedString(String):
@@ -112,28 +108,9 @@ class Email(String):
     - (optional) validate: function
       Used to validate input values
     """
+
     validate: Callable = staticmethod(valid.email)
-
-    def __init__(self, name: str, label: str):
-        super().__init__(name, label)
-        self.__value = None
-
-
-class ContactNumber(String):
-    """
-    A field of string type constituting a valid contact number.
-
-    Arguments
-    - name: str
-    - label: str
-    - (optional) validate: function
-      Used to validate input values
-    """
-    validate: Callable = staticmethod(valid.contact_number)
-
-    def __init__(self, name: str, label: str):
-        super().__init__(name, label)
-        self.__value = None
+    html_input_type: str = 'email'
 
 
 class Date(String):
@@ -147,10 +124,7 @@ class Date(String):
       Used to validate input values
     """
     validate: Callable = staticmethod(valid.date)
-
-    # def __init__(self, name: str, label: str):
-    #     self.name = name
-    #     self.label = label
+    html_input_type: str = 'date'
 
 
 class OptionalDate(Date):
@@ -174,7 +148,3 @@ class Year(Number):
       Used to validate input values
     """
     validate: Callable = staticmethod(valid.year)
-
-    def __init__(self, name: str, label: str):
-        super().__init__(name, label)
-        self.__value = None

@@ -1,4 +1,4 @@
 # TODO
-- [ ] storage.py interface with the database
+- [x] storage.py interface with the database
+- [x] Subject's subject_names are wrong - change
 - [ ] styling html css
-- [ ] client side validation (maybe?)

@@ -23,7 +23,7 @@ def view(page_name: str):
     form = f'<div class="center-form">{form.html()}</div>'
 
     if records:
-        table = convert.records_to_table(records)
+        table = convert.records_to_table(records, headers=entity.fields)
         table = f'<div class="outline">{table.html()}</div>'
 
     return render_template(
