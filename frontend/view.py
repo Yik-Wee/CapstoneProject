@@ -22,6 +22,13 @@ def view(page_name: str):
     form = convert.entity_to_form_with_values(entity, form, record_filter)
     form = f'<div class="center-form">{form.html()}</div>'
 
+    # LEFT JOIN-ed with student-subject, but SOME PPL didnt put subject_id
+    # so subject_id becomes None (NULL) cause not in table
+    for rec in records:
+        id_ = rec.get('id')
+        if 'student_id' in rec.keys():
+            rec['student_id'] = id_
+
     if records:
         table = convert.records_to_table(records, headers=entity.fields)
         table = f'<div class="outline">{table.html()}</div>'
