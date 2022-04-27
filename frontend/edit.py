@@ -31,7 +31,8 @@ def edit(page_name: str):
     entity = ENTITIES[page_name]
     form = html.RecordForm(action='', method='get')
     form = convert.entity_to_form_with_values(
-        entity, form, record_filter).html()
+        entity, form, record_filter)
+    form = f'<div class="center-form">{form.html()}</div>'
 
     # find record(s) corresponding to the filter specifying JOIN condition
     try:  # handle error when filter has invalid keys
