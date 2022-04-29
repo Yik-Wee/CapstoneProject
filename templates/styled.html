@@ -19,12 +19,18 @@
     {% block body %}
     {{ body }}
     {% endblock %}
-
-<!--     <hr>
-    <a href="/">🏠Home</a>
-    <a href="javascript:history.back()">&larr; Back</a> -->
     </div>
-    
+
+    <script>
+        const inputs = document.getElementsByTagName('input');
+        for (const input of inputs) {
+            // trim inputs of whitespace
+            input.onchange = (e) => {
+                e.target.value = e.target.value?.trim();
+            }
+        }
+    </script>
+
     <div class="topnav">
         <a class='active' href="/">🏠Home</a>
         <a class="item" href="/dashboard/add">Add</a>
