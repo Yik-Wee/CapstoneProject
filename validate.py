@@ -12,15 +12,22 @@ def false(value=None) -> bool:
     # Always returns False
     return False
 
+
+DISALLOWED_STRING_SYMBOLS = '</>'  # prevent xss attacks through viewing script tags in database
 def string(value: Any) -> bool:
     """
     Return
     - True if value is of type str
     - False otherwise
     """
-    return (
-        type(value) is str
-    )
+    if not isinstance(value, str):
+        return False
+
+    for c in value:
+        if c in DISALLOWED_STRING_SYMBOLS:
+            return False
+
+    return True
 
 def number(value: Any) -> bool:
     """
