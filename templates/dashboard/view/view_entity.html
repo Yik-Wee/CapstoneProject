@@ -12,13 +12,24 @@ View {{ entity }}
     filters {
         position: center
     }
+
+    .help-tooltip:hover {
+        cursor: default;
+    }
+
+    .help-tooltip:hover::after {
+        font-size: 14px;
+        color: #bcecf7;
+        content: "\A💡 Pro Tip: Everything is case sentitive";
+        white-space: pre;
+    }
 </style>
 {% endblock %}
 
 {% block body %}
 <h1>View {{ entity }}</h1>
 <div id="filters">
-    <h3>Search By:</h3>
+    <h3>Search By: <span class="help-tooltip">?</span></h3>
     <!-- filters to search by -->
     {{ form|safe }}
 </div>
