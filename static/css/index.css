@@ -142,6 +142,8 @@ tr.tr-insert {
 }
 
 .button {
+    display: inline-block; 
+    width: 200px;
     text-decoration: none;
     color: rgba(255, 255, 255, 0.8);
     background: rgb(145, 92, 182);
