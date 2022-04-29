@@ -1,15 +1,11 @@
 """
-Convert data to html or to other data
+Convert data to html
 """
 
 from typing import Any, Dict, List
 import data
 import model
 import myhtml as html
-
-# ------------------------------
-# Functions to convert data to html
-# ------------------------------
 
 
 def __add_input_by_field(
@@ -22,8 +18,6 @@ def __add_input_by_field(
     """
     if isinstance(field, data.Date):
         form.date_input(field.label, field.name, value=value)
-    elif isinstance(field, data.Email):
-        form.email_input(field.label, field.name, value=value)
     elif isinstance(field, data.ConstrainedString):
         options = field.constraints.copy()
         options.insert(0, '')  # <- empty field

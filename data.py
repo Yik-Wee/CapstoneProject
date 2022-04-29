@@ -98,21 +98,6 @@ class OptionalString(String):
     validate: Callable = staticmethod(valid.string)
 
 
-class Email(String):
-    """
-    A field of string type constituting a valid email address.
-
-    Arguments
-    - name: str
-    - label: str
-    - (optional) validate: function
-      Used to validate input values
-    """
-
-    validate: Callable = staticmethod(valid.email)
-    html_input_type: str = 'email'
-
-
 class Date(String):
     """
     A field of date type.
